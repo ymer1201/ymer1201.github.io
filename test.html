@@ -120,29 +120,31 @@ print("Привет, мир!")
         import sys
         import io
 
+        # Функция для выполнения Python-кода
         async def run_python():
-            code = Element("code").value
-            output_area = Element("output")
+            code = Element("code").value  # Получаем код из текстового поля
+            output_area = Element("output")  # Элемент для вывода результатов
 
-            old_stdout = sys.stdout
-            sys.stdout = new_stdout = io.StringIO()
+            old_stdout = sys.stdout  # Сохраняем старый stdout для восстановления
+            sys.stdout = new_stdout = io.StringIO()  # Перенаправляем вывод в StringIO
 
             try:
-                exec(code)
-                output = new_stdout.getvalue()
-                display(output, target="output", append=False)
+                exec(code)  # Выполняем код из текстового поля
+                output = new_stdout.getvalue()  # Получаем вывод
+                display(output, target="output", append=False)  # Отображаем вывод на странице
             except Exception as e:
-                display(f"🚨 Ошибка: {e}", target="output", append=False)
+                display(f"🚨 Ошибка: {e}", target="output", append=False)  # Если ошибка, показываем ее
             finally:
-                sys.stdout = old_stdout
+                sys.stdout = old_stdout  # Восстанавливаем стандартный вывод
 
+        # Функция для установки библиотек
         async def install_library():
-            lib = Element("library").value
+            lib = Element("library").value  # Получаем имя библиотеки
             try:
-                await micropip.install(lib)
-                display(f"✅ Установлена библиотека: {lib}", target="output", append=False)
+                await micropip.install(lib)  # Устанавливаем библиотеку через micropip
+                display(f"✅ Установлена библиотека: {lib}", target="output", append=False)  # Успешная установка
             except Exception as e:
-                display(f"🚨 Ошибка установки {lib}: {e}", target="output", append=False)
+                display(f"🚨 Ошибка установки {lib}: {e}", target="output", append=False)  # Ошибка при установке
     </py-script>
 
     <script>
