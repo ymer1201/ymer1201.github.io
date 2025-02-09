@@ -100,7 +100,8 @@
     <h1>Запустите Python-код в браузере 🐍</h1>
 
     <textarea id="code" placeholder="Введите Python-код...">
-print("Привет, мир!")
+# Пример Python-кода:
+# print("Привет, мир!")
     </textarea>
 
     <br>
@@ -112,7 +113,7 @@ print("Привет, мир!")
     <button class="install-btn" onclick="installLibrary()">Установить библиотеку</button>
 
     <h3>Результат:</h3>
-    <div id="output"></div>
+    <div id="output">Результаты будут отображаться здесь...</div>
 
     <py-script>
         from pyscript import display
@@ -124,6 +125,9 @@ print("Привет, мир!")
         async def run_python():
             code = Element("code").value  # Получаем код из текстового поля
             output_area = Element("output")  # Элемент для вывода результатов
+
+            # Очистка старого вывода
+            output_area.write("")
 
             old_stdout = sys.stdout  # Сохраняем старый stdout для восстановления
             sys.stdout = new_stdout = io.StringIO()  # Перенаправляем вывод в StringIO
@@ -148,6 +152,9 @@ print("Привет, мир!")
     </py-script>
 
     <script>
+        // Очистка выводимых данных при загрузке
+        document.getElementById('output').innerHTML = '';
+
         // Сохранение кода в localStorage
         if(localStorage.getItem('savedCode')) {
             document.getElementById('code').value = localStorage.getItem('savedCode');
@@ -166,9 +173,6 @@ print("Привет, мир!")
         function stopPython() {
             location.reload(); // Перезагружаем страницу для остановки выполнения
         }
-
-        // Очистка выводимых данных при загрузке
-        document.getElementById('output').innerHTML = '';
     </script>
 
 </body>
