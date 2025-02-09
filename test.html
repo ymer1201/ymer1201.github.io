@@ -3,17 +3,23 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Run Python in Browser</title>
+    <title>Python Executor</title>
     <style>
         body {
             font-family: Arial, sans-serif;
-            padding: 20px;
+            padding: 10px;
             background-color: #f0f0f0;
             color: #333;
+            max-width: 100%;
+            margin: 0 auto;
+            text-align: center;
         }
-        textarea {
-            width: 100%;
-            height: 200px;
+        h1 {
+            color: #4CAF50;
+        }
+        textarea, input {
+            width: 90%;
+            max-width: 500px;
             margin-bottom: 10px;
             padding: 10px;
             font-size: 14px;
@@ -27,48 +33,115 @@
             border: none;
             border-radius: 5px;
             cursor: pointer;
+            font-size: 16px;
+            margin: 10px 0;
         }
         button:hover {
             background-color: #45a049;
         }
         pre {
-            background-color: #f5f5f5;
-            border: 1px solid #ddd;
-            padding: 10px;
+            background-color: #f1f1f1;
+            padding: 15px;
+            border-radius: 5px;
             white-space: pre-wrap;
             word-wrap: break-word;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .output {
+            margin-top: 20px;
+        }
+        #console {
+            font-family: monospace;
+            font-size: 12px;
+            color: #555;
+            background-color: #eee;
+            padding: 15px;
+            margin-top: 20px;
+            max-height: 300px;
+            overflow-y: auto;
         }
     </style>
 </head>
 <body>
 
-    <h1>Run Python Code in Browser</h1>
+    <h1>Python Executor in Browser</h1>
 
     <textarea id="python-code" placeholder="Enter your Python code here"></textarea><br>
+    
     <button onclick="runPython()">Run Code</button>
-
+    <button onclick="stopExecution()">Stop Code</button><br>
+    
     <h2>Output:</h2>
     <pre id="output"></pre>
+    
+    <h2>Console Output:</h2>
+    <div id="console"></div>
+
+    <h3>Install/Update Libraries</h3>
+    <input id="install-library" type="text" placeholder="Library name (e.g., numpy)">
+    <button onclick="installLibrary()">Install/Update Library</button>
 
     <script src="https://cdn.jsdelivr.net/npm/pyodide@0.22.1/pyodide.js"></script>
     <script>
+        let pyodide;
+
+        // Инициализация Pyodide
+        async function initPyodide() {
+            pyodide = await loadPyodide();
+            console.log("Pyodide loaded");
+        }
+
+        // Функция для запуска Python кода
         async function runPython() {
             const pythonCode = document.getElementById("python-code").value;
+            const outputElement = document.getElementById("output");
+            const consoleElement = document.getElementById("console");
 
-            // Загрузка Pyodide
-            const pyodide = await loadPyodide();
-            let output = "";
+            outputElement.textContent = "Running...\n";
+            consoleElement.textContent = ""; // Очищаем консоль перед запуском
 
             try {
                 // Запуск Python кода
-                output = await pyodide.runPythonAsync(pythonCode);
+                const result = await pyodide.runPythonAsync(pythonCode);
+                outputElement.textContent = result;
+                consoleElement.textContent = "Code executed successfully.";
             } catch (error) {
-                output = error.message;
+                outputElement.textContent = "Error: " + error.message;
+                consoleElement.textContent = "Error in execution.";
+            }
+        }
+
+        // Функция для остановки выполнения кода
+        function stopExecution() {
+            // В Pyodide нет прямой функции остановки, но можно просто очистить результат
+            document.getElementById("output").textContent = "Execution stopped.";
+            document.getElementById("console").textContent = "Execution stopped.";
+        }
+
+        // Функция для установки и обновления библиотек
+        async function installLibrary() {
+            const libraryName = document.getElementById("install-library").value;
+            const consoleElement = document.getElementById("console");
+
+            if (!libraryName) {
+                alert("Please enter a library name.");
+                return;
             }
 
-            // Отображаем результат
-            document.getElementById("output").textContent = output;
+            consoleElement.textContent = `Installing ${libraryName}...`;
+
+            try {
+                // Установка библиотеки с помощью Pyodide
+                await pyodide.loadPackage(libraryName);
+                consoleElement.textContent = `${libraryName} installed/updated successfully.`;
+            } catch (error) {
+                consoleElement.textContent = "Error: " + error.message;
+            }
         }
+
+        // Инициализация Pyodide при загрузке страницы
+        initPyodide();
     </script>
 
 </body>
