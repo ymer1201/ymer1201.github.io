@@ -1,119 +1,178 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ru">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Python Executor with Telegram API</title>
+    <title>Python в браузере 🐍</title>
+
+    <script defer src="https://pyscript.net/latest/pyscript.js"></script>
+
     <style>
         body {
-            font-family: Arial, sans-serif;
-            padding: 10px;
-            background-color: #f0f0f0;
+            font-family: 'Roboto', sans-serif;
+            background: #f1f2f6;
             color: #333;
-            max-width: 100%;
-            margin: 0 auto;
             text-align: center;
+            max-width: 800px;
+            margin: 20px auto;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
         }
+
         h1 {
-            color: #4CAF50;
+            font-size: 30px;
+            color: #4C8BF5;
         }
-        textarea, input {
-            width: 90%;
-            max-width: 500px;
-            margin-bottom: 10px;
-            padding: 10px;
-            font-size: 14px;
-            border: 1px solid #ccc;
-            border-radius: 5px;
-        }
-        button {
-            padding: 10px 20px;
-            background-color: #4CAF50;
-            color: white;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 16px;
-            margin: 10px 0;
-        }
-        button:hover {
-            background-color: #45a049;
-        }
-        pre {
-            background-color: #f1f1f1;
+
+        textarea {
+            width: 100%;
+            height: 180px;
             padding: 15px;
-            border-radius: 5px;
+            font-family: monospace;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            resize: none;
+            background-color: #fff;
+        }
+
+        button {
+            padding: 12px 25px;
+            font-size: 16px;
+            border: none;
+            cursor: pointer;
+            border-radius: 8px;
+            margin: 10px;
+            transition: 0.3s ease;
+        }
+
+        .run-btn {
+            background: #4CAF50;
+            color: white;
+        }
+
+        .run-btn:hover {
+            background: #45a049;
+        }
+
+        .stop-btn {
+            background: #f44336;
+            color: white;
+        }
+
+        .stop-btn:hover {
+            background: #e53935;
+        }
+
+        .install-btn {
+            background: #007bff;
+            color: white;
+        }
+
+        .install-btn:hover {
+            background: #0056b3;
+        }
+
+        #output {
+            background: #fff;
+            padding: 20px;
+            margin-top: 20px;
+            border-radius: 8px;
+            border: 1px solid #ccc;
             white-space: pre-wrap;
             word-wrap: break-word;
-            max-height: 300px;
-            overflow-y: auto;
+            font-family: monospace;
+            font-size: 14px;
+            color: #333;
         }
-        .output {
-            margin-top: 20px;
+
+        input[type="text"] {
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            width: 80%;
+            margin-bottom: 10px;
         }
     </style>
 </head>
 <body>
 
-    <h1>Python Executor</h1>
+    <h1>Запустите Python-код в браузере 🐍</h1>
 
-    <textarea id="python-code" placeholder="Enter Python code here"></textarea><br>
-    <button onclick="runPython()">Run Python Code</button><br><br>
+    <textarea id="code" placeholder="Введите Python-код...">
+# Пример Python-кода:
+# print("Привет, мир!")
+    </textarea>
 
-    <h2>Send Message to Telegram Bot</h2>
-    <input type="text" id="telegram-message" placeholder="Enter message to send to Telegram Bot">
-    <button onclick="sendMessageToTelegram()">Send to Telegram</button>
+    <br>
+    <button class="run-btn" onclick="runPython()">Выполнить код</button>
+    <button class="stop-btn" onclick="stopPython()">Остановить код</button>
 
-    <h2>Output:</h2>
-    <pre id="output"></pre>
+    <h3>Установка библиотек:</h3>
+    <input type="text" id="library" placeholder="Введите название библиотеки...">
+    <button class="install-btn" onclick="installLibrary()">Установить библиотеку</button>
 
-    <script src="https://cdn.jsdelivr.net/npm/pyodide@0.22.1/pyodide.js"></script>
+    <h3>Результат:</h3>
+    <div id="output">Результаты будут отображаться здесь...</div>
+
+    <py-script>
+        from pyscript import display
+        import micropip
+        import sys
+        import io
+
+        # Функция для выполнения Python-кода
+        async def run_python():
+            code = Element("code").value  # Получаем код из текстового поля
+            output_area = Element("output")  # Элемент для вывода результатов
+
+            # Очистка старого вывода
+            output_area.write("")
+
+            old_stdout = sys.stdout  # Сохраняем старый stdout для восстановления
+            sys.stdout = new_stdout = io.StringIO()  # Перенаправляем вывод в StringIO
+
+            try:
+                exec(code)  # Выполняем код из текстового поля
+                output = new_stdout.getvalue()  # Получаем вывод
+                display(output, target="output", append=False)  # Отображаем вывод на странице
+            except Exception as e:
+                display(f"🚨 Ошибка: {e}", target="output", append=False)  # Если ошибка, показываем ее
+            finally:
+                sys.stdout = old_stdout  # Восстанавливаем стандартный вывод
+
+        # Функция для установки библиотек
+        async def install_library():
+            lib = Element("library").value  # Получаем имя библиотеки
+            try:
+                await micropip.install(lib)  # Устанавливаем библиотеку через micropip
+                display(f"✅ Установлена библиотека: {lib}", target="output", append=False)  # Успешная установка
+            except Exception as e:
+                display(f"🚨 Ошибка установки {lib}: {e}", target="output", append=False)  # Ошибка при установке
+    </py-script>
+
     <script>
-        let pyodide;
+        // Очистка выводимых данных при загрузке
+        document.getElementById('output').innerHTML = '';
 
-        // Инициализация Pyodide
-        async function initPyodide() {
-            pyodide = await loadPyodide();
-            console.log("Pyodide loaded");
+        // Сохранение кода в localStorage
+        if(localStorage.getItem('savedCode')) {
+            document.getElementById('code').value = localStorage.getItem('savedCode');
         }
 
-        // Функция для запуска Python кода
-        async function runPython() {
-            const pythonCode = document.getElementById("python-code").value;
-            const outputElement = document.getElementById("output");
-
-            outputElement.textContent = "Running...\n";
-
-            try {
-                // Запуск Python кода
-                const result = await pyodide.runPythonAsync(pythonCode);
-                outputElement.textContent = result;
-            } catch (error) {
-                outputElement.textContent = "Error: " + error.message;
-            }
+        function runPython() {
+            const code = document.getElementById('code').value;
+            localStorage.setItem('savedCode', code); // Сохранение кода
+            pyscript.run("run_python()");
         }
 
-        // Функция для отправки сообщения в Telegram
-        async function sendMessageToTelegram() {
-            const message = document.getElementById("telegram-message").value;
-            const token = "YOUR_BOT_TOKEN"; // Замените на ваш токен Telegram-бота
-            const chatId = "YOUR_CHAT_ID"; // Замените на ваш chat_id
-
-            const url = `https://api.telegram.org/bot${token}/sendMessage?chat_id=${chatId}&text=${message}`;
-            
-            try {
-                const response = await fetch(url);
-                const data = await response.json();
-                console.log("Message sent:", data);
-                alert("Message sent to Telegram!");
-            } catch (error) {
-                console.error("Error sending message:", error);
-                alert("Failed to send message.");
-            }
+        function installLibrary() {
+            pyscript.run("install_library()");
         }
 
-        // Инициализация Pyodide при загрузке страницы
-        initPyodide();
+        function stopPython() {
+            location.reload(); // Перезагружаем страницу для остановки выполнения
+        }
     </script>
 
 </body>
