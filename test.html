@@ -3,114 +3,73 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Python Executor</title>
+    <title>Run Python in Browser</title>
     <style>
         body {
             font-family: Arial, sans-serif;
-            background-color: #f4f4f4;
-            color: #333;
-            margin: 0;
             padding: 20px;
+            background-color: #f0f0f0;
+            color: #333;
         }
-
-        h1 {
-            text-align: center;
-            color: #4CAF50;
-        }
-
         textarea {
             width: 100%;
             height: 200px;
+            margin-bottom: 10px;
             padding: 10px;
+            font-size: 14px;
             border: 1px solid #ccc;
             border-radius: 5px;
-            font-size: 14px;
-            resize: none;
-            box-sizing: border-box;
         }
-
         button {
             padding: 10px 20px;
-            margin: 10px 0;
             background-color: #4CAF50;
             color: white;
             border: none;
             border-radius: 5px;
             cursor: pointer;
-            font-size: 16px;
         }
-
         button:hover {
             background-color: #45a049;
         }
-
-        #output {
-            padding: 15px;
-            background-color: #f1f1f1;
+        pre {
+            background-color: #f5f5f5;
             border: 1px solid #ddd;
-            border-radius: 5px;
-            margin-top: 20px;
+            padding: 10px;
             white-space: pre-wrap;
             word-wrap: break-word;
         }
-
-        #footer {
-            text-align: center;
-            font-size: 12px;
-            color: #777;
-            margin-top: 40px;
-        }
     </style>
-    <script src="https://cdn.jsdelivr.net/npm/pyodide@0.22.1/pyodide.js"></script>
 </head>
 <body>
+
     <h1>Run Python Code in Browser</h1>
 
-    <textarea id="python_code" placeholder="Enter your Python code here"></textarea><br>
-    <button onclick="runPythonCode()">Run Python Code</button>
+    <textarea id="python-code" placeholder="Enter your Python code here"></textarea><br>
+    <button onclick="runPython()">Run Code</button>
 
     <h2>Output:</h2>
     <pre id="output"></pre>
 
-    <div id="footer">
-        <p>Powered by Pyodide - Python in the Browser</p>
-    </div>
-
+    <script src="https://cdn.jsdelivr.net/npm/pyodide@0.22.1/pyodide.js"></script>
     <script>
-        let pyodide;
+        async function runPython() {
+            const pythonCode = document.getElementById("python-code").value;
 
-        // Загружаем Pyodide и устанавливаем состояние
-        async function loadPyodideAndRunCode() {
-            pyodide = await loadPyodide();
-            console.log("Pyodide loaded successfully");
-            restoreState();
-        }
+            // Загрузка Pyodide
+            const pyodide = await loadPyodide();
+            let output = "";
 
-        // Функция для выполнения Python кода
-        async function runPythonCode() {
-            const pythonCode = document.getElementById('python_code').value;
             try {
-                // Выполняем код через Pyodide
-                const output = await pyodide.runPythonAsync(pythonCode);
-                document.getElementById('output').textContent = output;
-
-                // Сохраняем код в localStorage
-                localStorage.setItem('python_code', pythonCode);
+                // Запуск Python кода
+                output = await pyodide.runPythonAsync(pythonCode);
             } catch (error) {
-                document.getElementById('output').textContent = `Error: ${error}`;
+                output = error.message;
             }
-        }
 
-        // Функция для восстановления состояния при загрузке
-        function restoreState() {
-            const savedCode = localStorage.getItem('python_code');
-            if (savedCode) {
-                document.getElementById('python_code').value = savedCode;
-            }
+            // Отображаем результат
+            document.getElementById("output").textContent = output;
         }
-
-        // Загружаем Pyodide при открытии страницы
-        loadPyodideAndRunCode();
     </script>
+
 </body>
 </html>
