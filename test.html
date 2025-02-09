@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Python в браузере</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 20px auto;
+            padding: 20px;
+        }
+        #code {
+            width: 100%;
+            height: 200px;
+            padding: 10px;
+            font-family: monospace;
+        }
+        button {
+            padding: 10px 20px;
+            background: #4CAF50;
+            color: white;
+            border: none;
+            cursor: pointer;
+            margin: 10px 0;
+        }
+        #output {
+            background: #f0f0f0;
+            padding: 10px;
+            white-space: pre-wrap;
+        }
+        .error {
+            color: red;
+        }
+    </style>
+</head>
+<body>
+    <h1>Запустите Python-код в браузере 🐍</h1>
+    <textarea id="code" placeholder="Введите код Python...">
+import time
+while True:
+    print("Работаю...")
+    time.sleep(1)
+    </textarea>
+    <br>
+    <button onclick="runPython()">Выполнить код</button>
+    <button onclick="stopPython()" style="background: #f44336;">Остановить код</button>
+    <h3>Установка библиотек:</h3>
+    <input type="text" id="library" placeholder="Введите название библиотеки...">
+    <button onclick="installLibrary()">Установить библиотеку</button>
+    <h3>Результат:</h3>
+    <div id="output"></div>
+
+    <!-- Подключаем Pyodide -->
+    <script src="https://cdn.jsdelivr.net/pyodide/v0.23.4/full/pyodide.js"></script>
+    <script>
+        // Инициализация Pyodide
+        let pyodide;
+        let isRunning = false; // Флаг для отслеживания выполнения кода
+
+        async function initializePyodide() {
+            pyodide = await loadPyodide({
+                indexURL: "https://cdn.jsdelivr.net/pyodide/v0.23.4/full/"
+            });
+            console.log("Pyodide загружен!");
+        }
+
+        // Запуск Python-кода
+        async function runPython() {
+            if (isRunning) {
+                alert("Код уже выполняется!");
+                return;
+            }
+            isRunning = true;
+            let code = document.getElementById("code").value;
+            let output = document.getElementById("output");
+
+            try {
+                // Перенаправляем вывод Python в браузер
+                pyodide.runPython(`
+                    import sys
+                    from js import console
+                    sys.stdout = sys.stderr = console
+                `);
+
+                // Выполняем код асинхронно
+                setTimeout(async () => {
+                    try {
+                        await pyodide.runPythonAsync(code);
+                        output.innerText = "✅ Код выполнен!";
+                    } catch (e) {
+                        output.innerText = "🚨 Ошибка:\n" + e.message;
+                    } finally {
+                        isRunning = false;
+                    }
+                }, 0);
+            } catch (e) {
+                output.innerText = "🚨 Ошибка:\n" + e.message;
+                isRunning = false;
+            }
+        }
+
+        // Остановка выполнения кода
+        function stopPython() {
+            if (!isRunning) {
+                alert("Нет выполняющегося кода!");
+                return;
+            }
+            isRunning = false;
+            location.reload(); // Перезагружаем страницу для остановки кода
+            console.log("Код остановлен!");
+        }
+
+        // Установка библиотек
+        async function installLibrary() {
+            let library = document.getElementById("library").value;
+            if (!library) {
+                alert("Введите название библиотеки!");
+                return;
+            }
+            let output = document.getElementById("output");
+            output.innerText = `⏳ Устанавливаю библиотеку ${library}...`;
+
+            try {
+                await pyodide.loadPackage("micropip");
+                await pyodide.runPythonAsync(`
+                    import micropip
+                    micropip.install("${library}")
+                `);
+                output.innerText = `✅ Библиотека ${library} установлена!`;
+            } catch (e) {
+                output.innerText = `🚨 Ошибка при установке ${library}:\n${e.message}`;
+            }
+        }
+
+        // Инициализация Pyodide при загрузке страницы
+        initializePyodide();
+    </script>
+</body>
+</html>
