@@ -287,6 +287,10 @@
         let terminal;
         let files = [];
         let currentFile = null;
+        let installedPackages = {
+            pip: [],
+            npm: []
+        };
 
         // Инициализация интерфейса
         function toggleMenu() {
@@ -307,9 +311,10 @@
             document.getElementById(`${tab}Panel`).classList.add('active');
             document.getElementById(`${tab}Tab`).classList.add('active');
 
-            if (tab === 'editor') {
+            // Подстраиваем размеры компонентов
+            if (tab === 'editor' && editor) {
                 editor.layout();
-            } else {
+            } else if (tab === 'terminal' && fitAddon) {
                 fitAddon.fit();
             }
         }
@@ -373,7 +378,10 @@
             terminal.writeln('Ready to code...');
 
             // Активируем вкладку редактора по умолчанию
+            document.getElementById('editorTab').classList.add('active');
             switchTab('editor');
+
+            loadPackages(); // Загружаем пакеты при старте
         });
 
         // Управление файлами
@@ -459,10 +467,32 @@
             }
         }
 
-        // Выполнение кода
+        // Code Execution
+        async function executeCode(code, language) {
+            try {
+                const response = await fetch('/api/code/execute', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ code, language })
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.error || 'Failed to execute code');
+                }
+
+                return data.output;
+            } catch (error) {
+                return `Error: ${error.message}`;
+            }
+        }
+
         async function runCode() {
-            const code = editor.getValue().trim();
-            if (!code) {
+            const code = editor.getValue();
+            if (!code.trim()) {
                 showNotification('No code to run', true);
                 return;
             }
@@ -474,44 +504,33 @@
             terminal.clear();
             terminal.writeln('Running code...\n');
 
-            try {
-                // Простая эмуляция выполнения Python кода
-                if (language === 'python') {
-                    const printRegex = /print\((.*?)\)/g;
-                    const matches = code.match(printRegex);
+            const output = await executeCode(code, language);
+            terminal.writeln(output);
+        }
 
-                    if (matches) {
-                        matches.forEach(match => {
-                            const content = match.slice(6, -1).trim();
-                            const output = content.startsWith('"') || content.startsWith("'") 
-                                ? content.slice(1, -1) 
-                                : eval(content);
-                            terminal.writeln(output);
-                        });
-                    } else {
-                        terminal.writeln('No output');
-                    }
+        // Package Management
+        async function executePackageCommand(command) {
+            try {
+                const response = await fetch('/api/package/execute', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ command })
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.error || 'Failed to execute package command');
                 }
-                // JavaScript можно выполнить напрямую
-                else if (language === 'javascript') {
-                    try {
-                        const result = eval(code);
-                        if (result !== undefined) {
-                            terminal.writeln(result.toString());
-                        }
-                    } catch (error) {
-                        terminal.writeln('Error: ' + error.message);
-                    }
-                }
-                else {
-                    terminal.writeln('Language not supported for execution');
-                }
+
+                return data.output;
             } catch (error) {
-                terminal.writeln('Error: ' + error.message);
+                return `Error: ${error.message}`;
             }
         }
 
-        // Управление пакетами
         async function installPackage() {
             const packageName = document.getElementById('packageName').value.trim();
             if (!packageName) {
@@ -520,31 +539,51 @@
             }
 
             const manager = document.getElementById('packageManager').value;
+            const command = manager === 'pip' ? `pip install ${packageName}` : `npm install ${packageName}`;
+
             switchTab('terminal');
             terminal.clear();
             terminal.writeln(`Installing ${packageName}...`);
 
-            // В этой версии простая эмуляция
-            setTimeout(() => {
-                terminal.writeln(`Successfully installed ${packageName}`);
+            const output = await executePackageCommand(command);
+            terminal.writeln(output);
+
+            if (!output.includes('Error')) {
+                if (!installedPackages[manager].includes(packageName)) {
+                    installedPackages[manager].push(packageName);
+                    savePackages();
+                }
                 showNotification(`Package ${packageName} installed`);
-            }, 1000);
+                document.getElementById('packageName').value = '';
+            } else {
+                showNotification('Failed to install package', true);
+            }
         }
 
         async function listPackages() {
             const manager = document.getElementById('packageManager').value;
+            const command = manager === 'pip' ? 'pip list' : 'npm list';
+
             switchTab('terminal');
             terminal.clear();
             terminal.writeln('Installed packages:');
 
-            // Эмуляция списка пакетов
-            if (manager === 'pip') {
-                terminal.writeln('python-package-1 1.0.0');
-                terminal.writeln('python-package-2 2.0.0');
-            } else {
-                terminal.writeln('node-package-1@1.0.0');
-                terminal.writeln('node-package-2@2.0.0');
+            const output = await executePackageCommand(command);
+            terminal.writeln(output);
+        }
+
+
+        // Загрузка установленных пакетов
+        function loadPackages() {
+            const saved = localStorage.getItem('installed-packages');
+            if (saved) {
+                installedPackages = JSON.parse(saved);
             }
+        }
+
+        // Сохранение пакетов
+        function savePackages() {
+            localStorage.setItem('installed-packages', JSON.stringify(installedPackages));
         }
 
         // Утилиты
