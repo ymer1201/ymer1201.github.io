@@ -1,14 +1,13 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
     <meta name="theme-color" content="#1a1b26" />
-    <meta name="description" content="Online Code Editor with multiple language support" />
-    <title>Mega Code Editor</title>
-    <!-- Monaco Editor -->
+    <meta name="description" content="Code Editor with multiple language support" />
+    <title>Code Editor</title>
     <link rel="stylesheet" data-name="vs/editor/editor.main" href="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.36.1/min/vs/editor/editor.main.min.css" />
-    <!-- XTerm.js -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/xterm@5.1.0/css/xterm.css" />
     <style>
         :root {
@@ -25,13 +24,13 @@
             margin: 0;
             padding: 0;
             box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
         }
 
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            font-family: -apple-system, system-ui, sans-serif;
             background-color: var(--primary-color);
             color: var(--text-color);
-            line-height: 1.6;
             height: 100vh;
             overflow: hidden;
         }
@@ -56,7 +55,6 @@
             flex-direction: column;
             gap: 1rem;
             height: auto;
-            min-height: 200px;
         }
 
         @media (min-width: 768px) {
@@ -65,6 +63,7 @@
                 height: 100vh;
                 border-right: 1px solid var(--border-color);
                 border-bottom: none;
+                overflow-y: auto;
             }
         }
 
@@ -83,7 +82,7 @@
 
         .editor-container {
             flex: 1;
-            min-height: 0;
+            position: relative;
         }
 
         .terminal-container {
@@ -111,13 +110,7 @@
             list-style: none;
             margin-top: 0.5rem;
             overflow-y: auto;
-            max-height: 150px;
-        }
-
-        @media (min-width: 768px) {
-            .file-list {
-                max-height: calc(100vh - 300px);
-            }
+            max-height: calc(100vh - 300px);
         }
 
         .file-item {
@@ -130,7 +123,7 @@
             justify-content: space-between;
             align-items: center;
             transition: all 0.2s;
-            font-size: 0.9rem;
+            min-height: 44px;
         }
 
         .file-item:active {
@@ -139,7 +132,7 @@
 
         .file-item.active {
             background-color: var(--accent-color);
-            color: #ffffff;
+            color: white;
         }
 
         .btn {
@@ -154,9 +147,8 @@
             display: inline-flex;
             align-items: center;
             gap: 0.5rem;
+            min-height: 44px;
             transition: all 0.2s;
-            touch-action: manipulation;
-            -webkit-tap-highlight-color: transparent;
         }
 
         .btn:active {
@@ -174,14 +166,13 @@
             border: 1px solid var(--border-color);
             padding: 0.75rem;
             border-radius: 6px;
+            font-size: 0.875rem;
+            min-height: 44px;
             width: 100%;
             max-width: 200px;
-            font-size: 0.875rem;
-            appearance: none;
-            cursor: pointer;
         }
 
-        .input {
+        .package-input {
             background-color: var(--primary-color);
             color: var(--text-color);
             border: 1px solid var(--border-color);
@@ -189,6 +180,8 @@
             border-radius: 6px;
             width: 100%;
             font-size: 0.875rem;
+            margin: 0.5rem 0;
+            min-height: 44px;
         }
 
         .notification {
@@ -198,23 +191,58 @@
             transform: translateX(-50%);
             padding: 0.75rem 1.5rem;
             border-radius: 6px;
-            background-color: var(--success-color);
             color: white;
             font-size: 0.875rem;
             z-index: 1000;
-            animation: slideUp 0.3s ease-out;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+            animation: slideUp 0.3s ease;
+            text-align: center;
+            min-width: 200px;
+            max-width: 90%;
         }
 
         @keyframes slideUp {
-            from {
-                transform: translate(-50%, 100%);
-                opacity: 0;
-            }
-            to {
-                transform: translate(-50%, 0);
-                opacity: 1;
-            }
+            from { transform: translate(-50%, 100%); opacity: 0; }
+            to { transform: translate(-50%, 0); opacity: 1; }
+        }
+
+        .tabs {
+            display: flex;
+            background-color: var(--secondary-color);
+            padding: 0.5rem;
+            gap: 0.5rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .tab {
+            padding: 0.75rem 1rem;
+            border: none;
+            background: none;
+            color: var(--text-color);
+            cursor: pointer;
+            border-radius: 6px;
+            min-height: 44px;
+            font-size: 1rem;
+        }
+
+        .tab.active {
+            background-color: var(--accent-color);
+            color: white;
+        }
+
+        .panel {
+            display: none;
+            flex-direction: column;
+            height: 100%;
+        }
+
+        .panel.active {
+            display: flex;
+        }
+
+        .package-manager {
+            padding: 1rem;
+            background-color: var(--secondary-color);
+            border-top: 1px solid var(--border-color);
         }
 
         @media (max-width: 480px) {
@@ -222,14 +250,10 @@
                 padding: 0.6rem 0.8rem;
                 font-size: 0.8rem;
             }
-
-            .select, .input {
+            
+            .select, .package-input {
                 font-size: 0.8rem;
                 padding: 0.6rem;
-            }
-
-            .toolbar {
-                padding: 0.5rem;
             }
         }
     </style>
@@ -241,25 +265,42 @@
                 <button class="btn" onclick="createNewFile()">New File</button>
                 <div class="file-list" id="fileList"></div>
             </div>
-            <div class="settings">
-                <select class="select" id="languageSelect" onchange="changeLanguage()">
-                    <option value="python">Python</option>
-                    <option value="javascript">JavaScript</option>
-                    <option value="typescript">TypeScript</option>
-                    <option value="html">HTML</option>
-                    <option value="css">CSS</option>
+            <div class="package-manager">
+                <select class="select" id="packageManager">
+                    <option value="pip">pip (Python)</option>
+                    <option value="npm">npm (Node.js)</option>
                 </select>
+                <input type="text" class="package-input" id="packageName" placeholder="Package name">
+                <div style="display: flex; gap: 0.5rem;">
+                    <button class="btn" style="flex: 1" onclick="installPackage()">Install</button>
+                    <button class="btn" style="flex: 1" onclick="listPackages()">List</button>
+                </div>
             </div>
         </div>
 
         <div class="main-content">
-            <div class="toolbar">
-                <button class="btn" onclick="runCode()">Run</button>
-                <button class="btn" onclick="saveToFile()">Save</button>
-                <button class="btn" onclick="shareCode()">Share</button>
+            <div class="tabs">
+                <button class="tab active" onclick="switchTab('editor')" id="editorTab">Editor</button>
+                <button class="tab" onclick="switchTab('terminal')" id="terminalTab">Terminal</button>
             </div>
-            <div class="editor-container" id="editor"></div>
-            <div class="terminal-container" id="terminal"></div>
+            <div class="panel active" id="editorPanel">
+                <div class="toolbar">
+                    <select class="select" id="languageSelect" onchange="changeLanguage()">
+                        <option value="python">Python</option>
+                        <option value="javascript">JavaScript</option>
+                        <option value="typescript">TypeScript</option>
+                        <option value="html">HTML</option>
+                        <option value="css">CSS</option>
+                    </select>
+                    <button class="btn" onclick="runCode()">▶ Run</button>
+                    <button class="btn" onclick="saveFile()">💾 Save</button>
+                    <button class="btn" onclick="shareCode()">Share</button>
+                </div>
+                <div class="editor-container" id="editor"></div>
+            </div>
+            <div class="panel" id="terminalPanel">
+                <div id="terminal" style="height: 100%"></div>
+            </div>
         </div>
     </div>
 
@@ -274,30 +315,31 @@
     <script src="https://cdn.jsdelivr.net/npm/xterm-addon-fit@0.7.0/lib/xterm-addon-fit.min.js"></script>
 
     <script>
-        // Global variables
         let editor;
         let terminal;
         let files = [];
         let currentFile = null;
-        let currentCommand = ''; // Для хранения текущей команды в терминале
+        let currentCommand = '';
+        let installedPackages = {
+            pip: [],
+            npm: []
+        };
 
         // Initialize Monaco Editor
         require(['vs/editor/editor.main'], function() {
             editor = monaco.editor.create(document.getElementById('editor'), {
-                value: '# Добро пожаловать в Mega Code Editor\n# Выберите язык программирования и начните писать код!',
+                value: '# Welcome to Code Editor\n# Start coding!',
                 language: 'python',
                 theme: 'vs-dark',
                 automaticLayout: true,
                 minimap: { enabled: false },
-                fontSize: 14,
-                lineNumbers: 'on',
-                scrollBeyondLastLine: false,
+                fontSize: 16,
                 wordWrap: 'on',
+                scrollBeyondLastLine: false,
                 padding: { top: 10 }
             });
 
-            // Настройка темы
-            monaco.editor.defineTheme('megaTheme', {
+            monaco.editor.defineTheme('customTheme', {
                 base: 'vs-dark',
                 inherit: true,
                 rules: [],
@@ -308,7 +350,7 @@
                     'editor.selectionBackground': '#515c7e'
                 }
             });
-            monaco.editor.setTheme('megaTheme');
+            monaco.editor.setTheme('customTheme');
 
             window.addEventListener('resize', () => {
                 editor.layout();
@@ -348,24 +390,42 @@
             fitAddon.fit();
         });
 
+        // Tab switching
+        function switchTab(tab) {
+            document.querySelectorAll('.panel').forEach(panel => {
+                panel.classList.remove('active');
+            });
+            document.querySelectorAll('.tab').forEach(t => {
+                t.classList.remove('active');
+            });
+
+            document.getElementById(`${tab}Panel`).classList.add('active');
+            document.getElementById(`${tab}Tab`).classList.add('active');
+
+            if (tab === 'editor' && editor) {
+                editor.layout();
+            } else if (tab === 'terminal' && fitAddon) {
+                fitAddon.fit();
+            }
+        }
+
         // File Management
         function createNewFile() {
-            const name = prompt('Введите имя файла:');
+            const name = prompt('Enter file name:');
             if (!name) return;
 
-            const language = document.getElementById('languageSelect').value;
             const file = {
                 id: Date.now(),
                 name,
                 content: '',
-                language
+                language: document.getElementById('languageSelect').value
             };
 
             files.push(file);
             saveFiles();
             updateFileList();
             selectFile(file);
-            showNotification('Файл успешно создан');
+            showNotification('File created');
         }
 
         function updateFileList() {
@@ -373,14 +433,14 @@
             fileList.innerHTML = '';
 
             files.forEach(file => {
-                const li = document.createElement('div');
-                li.className = `file-item ${currentFile?.id === file.id ? 'active' : ''}`;
-                li.innerHTML = `
+                const item = document.createElement('div');
+                item.className = `file-item ${currentFile?.id === file.id ? 'active' : ''}`;
+                item.innerHTML = `
                     <span>${file.name}</span>
                     <button class="btn" onclick="event.stopPropagation(); deleteFile(${file.id})">×</button>
                 `;
-                li.onclick = () => selectFile(file);
-                fileList.appendChild(li);
+                item.onclick = () => selectFile(file);
+                fileList.appendChild(item);
             });
         }
 
@@ -393,7 +453,7 @@
         }
 
         function deleteFile(id) {
-            if (!confirm('Удалить этот файл?')) return;
+            if (!confirm('Delete this file?')) return;
 
             files = files.filter(f => f.id !== id);
             if (currentFile?.id === id) {
@@ -402,45 +462,33 @@
             }
             saveFiles();
             updateFileList();
-            showNotification('Файл удален');
+            showNotification('File deleted');
         }
 
-        function saveToFile() {
+        function saveFile() {
             if (!currentFile) {
-                showNotification('Не выбран файл', true);
+                showNotification('No file selected', true);
                 return;
             }
 
             currentFile.content = editor.getValue();
             currentFile.language = document.getElementById('languageSelect').value;
             saveFiles();
-            showNotification('Файл сохранен');
-        }
-
-        // Local Storage
-        function saveFiles() {
-            localStorage.setItem('mega-editor-files', JSON.stringify(files));
-        }
-
-        function loadFiles() {
-            const saved = localStorage.getItem('mega-editor-files');
-            if (saved) {
-                files = JSON.parse(saved);
-                updateFileList();
-            }
+            showNotification('File saved');
         }
 
         // Code Execution
         async function runCode() {
             const code = editor.getValue();
             if (!code.trim()) {
-                showNotification('Нет кода для выполнения', true);
+                showNotification('No code to run', true);
                 return;
             }
 
             const language = document.getElementById('languageSelect').value;
+            switchTab('terminal');
             terminal.clear();
-            terminal.writeln('Выполнение кода...');
+            terminal.writeln('Running code...\n');
 
             try {
                 const response = await fetch('/api/code/execute', {
@@ -454,16 +502,14 @@
                 const data = await response.json();
 
                 if (response.ok) {
-                    terminal.writeln('Результат:');
-                    terminal.writeln(data.output || 'Нет вывода');
+                    terminal.writeln(data.output || 'Program executed successfully with no output.');
                 } else {
-                    terminal.writeln('Ошибка:');
-                    terminal.writeln(data.error || 'Произошла неизвестная ошибка');
+                    terminal.writeln('Error:');
+                    terminal.writeln(data.error || 'An unknown error occurred');
                 }
             } catch (error) {
-                terminal.writeln('Ошибка:');
+                terminal.writeln('Error:');
                 terminal.writeln(error.message);
-                showNotification('Не удалось выполнить код', true);
             }
         }
 
@@ -481,44 +527,76 @@
                 const data = await response.json();
 
                 if (response.ok) {
-                    terminal.writeln(data.output || 'Команда успешно выполнена');
+                    terminal.writeln(data.output || 'Command executed successfully');
                 } else {
-                    terminal.writeln('Ошибка:');
-                    terminal.writeln(data.error || 'Произошла неизвестная ошибка');
+                    terminal.writeln('Error:');
+                    terminal.writeln(data.error || 'An unknown error occurred');
                 }
             } catch (error) {
-                terminal.writeln('Ошибка:');
+                terminal.writeln('Error:');
                 terminal.writeln(error.message);
-                showNotification('Не удалось выполнить команду пакетного менеджера', true);
             }
         }
 
-        // Terminal Input Handling
-        terminal.onData(data => {
-            // Обработка ввода в терминале
-            if (data === '\r') { // Клавиша Enter
-                terminal.write('\r\n');
-                const command = currentCommand.trim();
-                if (command) {
-                    if (command.startsWith('pip ') || command.startsWith('npm ')) {
-                        executePackageCommand(command);
-                    } else {
-                        terminal.writeln(`Выполнение команды: ${command}`);
-                    }
-                }
-                currentCommand = '';
-            } else if (data === '\u007f') { // Backspace
-                if (currentCommand.length > 0) {
-                    currentCommand = currentCommand.slice(0, -1);
-                    terminal.write('\b \b');
-                }
-            } else {
-                currentCommand += data;
-                terminal.write(data);
+        async function installPackage() {
+            const packageName = document.getElementById('packageName').value.trim();
+            if (!packageName) {
+                showNotification('Enter package name', true);
+                return;
             }
-        });
 
-        // Sharing
+            const manager = document.getElementById('packageManager').value;
+            const command = manager === 'pip' ? `pip install ${packageName}` : `npm install ${packageName}`;
+
+            switchTab('terminal');
+            terminal.clear();
+            terminal.writeln(`Installing ${packageName}...`);
+
+            await executePackageCommand(command);
+
+            if (!installedPackages[manager].includes(packageName)) {
+                installedPackages[manager].push(packageName);
+                savePackages();
+            }
+            document.getElementById('packageName').value = '';
+        }
+
+        async function listPackages() {
+            const manager = document.getElementById('packageManager').value;
+            const command = manager === 'pip' ? 'pip list' : 'npm list';
+
+            switchTab('terminal');
+            terminal.clear();
+            terminal.writeln('Installed packages:');
+
+            await executePackageCommand(command);
+        }
+
+        // Storage Management
+        function saveFiles() {
+            localStorage.setItem('code-editor-files', JSON.stringify(files));
+        }
+
+        function loadFiles() {
+            const saved = localStorage.getItem('code-editor-files');
+            if (saved) {
+                files = JSON.parse(saved);
+                updateFileList();
+            }
+        }
+
+        function savePackages() {
+            localStorage.setItem('installed-packages', JSON.stringify(installedPackages));
+        }
+
+        function loadPackages() {
+            const saved = localStorage.getItem('installed-packages');
+            if (saved) {
+                installedPackages = JSON.parse(saved);
+            }
+        }
+
+        // Share functionality
         function shareCode() {
             const code = editor.getValue();
             const language = document.getElementById('languageSelect').value;
@@ -529,21 +607,9 @@
 
             const url = `${window.location.origin}${window.location.pathname}?${params.toString()}`;
 
-            navigator.clipboard.writeText(url).then(() => {
-                showNotification('URL для шаринга скопирован в буфер обмена');
-            }).catch(() => {
-                showNotification('Не удалось скопировать URL', true);
-            });
-        }
-
-        // Language Change
-        function changeLanguage() {
-            const language = document.getElementById('languageSelect').value;
-            editor.updateOptions({ language });
-            if (currentFile) {
-                currentFile.language = language;
-                saveFiles();
-            }
+            navigator.clipboard.writeText(url)
+                .then(() => showNotification('Share URL copied to clipboard'))
+                .catch(() => showNotification('Failed to copy URL', true));
         }
 
         // Utilities
@@ -560,12 +626,44 @@
             }, 3000);
         }
 
-        // Load saved files on start
+        function changeLanguage() {
+            const language = document.getElementById('languageSelect').value;
+            editor.updateOptions({ language });
+            if (currentFile) {
+                currentFile.language = language;
+                saveFiles();
+            }
+        }
+
+        // Terminal Input Handling
+        terminal.onData(data => {
+            if (data === '\r') { // Enter key
+                terminal.write('\r\n');
+                const command = currentCommand.trim();
+                if (command) {
+                    if (command.startsWith('pip ') || command.startsWith('npm ')) {
+                        executePackageCommand(command);
+                    } else {
+                        terminal.writeln(`Command: ${command}`);
+                    }
+                }
+                currentCommand = '';
+            } else if (data === '\u007f') { // Backspace
+                if (currentCommand.length > 0) {
+                    currentCommand = currentCommand.slice(0, -1);
+                    terminal.write('\b \b');
+                }
+            } else {
+                currentCommand += data;
+                terminal.write(data);
+            }
+        });
+
+        // Initialize
         loadFiles();
-        terminal.writeln('Добро пожаловать в Mega Code Editor');
-        terminal.writeln('Готов к работе...');
-        terminal.writeln('Используйте команды pip или npm для установки пакетов');
-        terminal.writeln('Например: pip install requests');
+        loadPackages();
+        terminal.writeln('Welcome to Code Editor');
+        terminal.writeln('Ready to code...');
 
         // Handle URL parameters for shared code
         const urlParams = new URLSearchParams(window.location.search);
