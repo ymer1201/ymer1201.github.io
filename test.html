@@ -1,179 +1,116 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Python в браузере 🐍</title>
-
-    <script defer src="https://pyscript.net/latest/pyscript.js"></script>
-
+    <title>Python Executor</title>
     <style>
         body {
-            font-family: 'Roboto', sans-serif;
-            background: #f1f2f6;
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
             color: #333;
-            text-align: center;
-            max-width: 800px;
-            margin: 20px auto;
+            margin: 0;
             padding: 20px;
-            border-radius: 10px;
-            box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
         }
 
         h1 {
-            font-size: 30px;
-            color: #4C8BF5;
+            text-align: center;
+            color: #4CAF50;
         }
 
         textarea {
             width: 100%;
-            height: 180px;
-            padding: 15px;
-            font-family: monospace;
+            height: 200px;
+            padding: 10px;
             border: 1px solid #ccc;
-            border-radius: 8px;
+            border-radius: 5px;
+            font-size: 14px;
             resize: none;
-            background-color: #fff;
+            box-sizing: border-box;
         }
 
         button {
-            padding: 12px 25px;
-            font-size: 16px;
+            padding: 10px 20px;
+            margin: 10px 0;
+            background-color: #4CAF50;
+            color: white;
             border: none;
+            border-radius: 5px;
             cursor: pointer;
-            border-radius: 8px;
-            margin: 10px;
-            transition: 0.3s ease;
+            font-size: 16px;
         }
 
-        .run-btn {
-            background: #4CAF50;
-            color: white;
-        }
-
-        .run-btn:hover {
-            background: #45a049;
-        }
-
-        .stop-btn {
-            background: #f44336;
-            color: white;
-        }
-
-        .stop-btn:hover {
-            background: #e53935;
-        }
-
-        .install-btn {
-            background: #007bff;
-            color: white;
-        }
-
-        .install-btn:hover {
-            background: #0056b3;
+        button:hover {
+            background-color: #45a049;
         }
 
         #output {
-            background: #fff;
-            padding: 20px;
+            padding: 15px;
+            background-color: #f1f1f1;
+            border: 1px solid #ddd;
+            border-radius: 5px;
             margin-top: 20px;
-            border-radius: 8px;
-            border: 1px solid #ccc;
             white-space: pre-wrap;
             word-wrap: break-word;
-            font-family: monospace;
-            font-size: 14px;
-            color: #333;
         }
 
-        input[type="text"] {
-            padding: 10px;
-            border: 1px solid #ccc;
-            border-radius: 8px;
-            width: 80%;
-            margin-bottom: 10px;
+        #footer {
+            text-align: center;
+            font-size: 12px;
+            color: #777;
+            margin-top: 40px;
         }
     </style>
+    <script src="https://cdn.jsdelivr.net/npm/pyodide@0.22.1/pyodide.js"></script>
 </head>
 <body>
+    <h1>Run Python Code in Browser</h1>
 
-    <h1>Запустите Python-код в браузере 🐍</h1>
+    <textarea id="python_code" placeholder="Enter your Python code here"></textarea><br>
+    <button onclick="runPythonCode()">Run Python Code</button>
 
-    <textarea id="code" placeholder="Введите Python-код...">
-# Пример Python-кода:
-# print("Привет, мир!")
-    </textarea>
+    <h2>Output:</h2>
+    <pre id="output"></pre>
 
-    <br>
-    <button class="run-btn" onclick="runPython()">Выполнить код</button>
-    <button class="stop-btn" onclick="stopPython()">Остановить код</button>
-
-    <h3>Установка библиотек:</h3>
-    <input type="text" id="library" placeholder="Введите название библиотеки...">
-    <button class="install-btn" onclick="installLibrary()">Установить библиотеку</button>
-
-    <h3>Результат:</h3>
-    <div id="output">Результаты будут отображаться здесь...</div>
-
-    <py-script>
-        from pyscript import display
-        import micropip
-        import sys
-        import io
-
-        # Функция для выполнения Python-кода
-        async def run_python():
-            code = Element("code").value  # Получаем код из текстового поля
-            output_area = Element("output")  # Элемент для вывода результатов
-
-            # Очистка старого вывода
-            output_area.write("")
-
-            old_stdout = sys.stdout  # Сохраняем старый stdout для восстановления
-            sys.stdout = new_stdout = io.StringIO()  # Перенаправляем вывод в StringIO
-
-            try:
-                exec(code)  # Выполняем код из текстового поля
-                output = new_stdout.getvalue()  # Получаем вывод
-                display(output, target="output", append=False)  # Отображаем вывод на странице
-            except Exception as e:
-                display(f"🚨 Ошибка: {e}", target="output", append=False)  # Если ошибка, показываем ее
-            finally:
-                sys.stdout = old_stdout  # Восстанавливаем стандартный вывод
-
-        # Функция для установки библиотек
-        async def install_library():
-            lib = Element("library").value  # Получаем имя библиотеки
-            try:
-                await micropip.install(lib)  # Устанавливаем библиотеку через micropip
-                display(f"✅ Установлена библиотека: {lib}", target="output", append=False)  # Успешная установка
-            except Exception as e:
-                display(f"🚨 Ошибка установки {lib}: {e}", target="output", append=False)  # Ошибка при установке
-    </py-script>
+    <div id="footer">
+        <p>Powered by Pyodide - Python in the Browser</p>
+    </div>
 
     <script>
-        // Очистка выводимых данных при загрузке
-        document.getElementById('output').innerHTML = '';
+        let pyodide;
 
-        // Сохранение кода в localStorage
-        if(localStorage.getItem('savedCode')) {
-            document.getElementById('code').value = localStorage.getItem('savedCode');
+        // Загружаем Pyodide и устанавливаем состояние
+        async function loadPyodideAndRunCode() {
+            pyodide = await loadPyodide();
+            console.log("Pyodide loaded successfully");
+            restoreState();
         }
 
-        function runPython() {
-            const code = document.getElementById('code').value;
-            localStorage.setItem('savedCode', code); // Сохранение кода
-            pyscript.run("run_python()");
+        // Функция для выполнения Python кода
+        async function runPythonCode() {
+            const pythonCode = document.getElementById('python_code').value;
+            try {
+                // Выполняем код через Pyodide
+                const output = await pyodide.runPythonAsync(pythonCode);
+                document.getElementById('output').textContent = output;
+
+                // Сохраняем код в localStorage
+                localStorage.setItem('python_code', pythonCode);
+            } catch (error) {
+                document.getElementById('output').textContent = `Error: ${error}`;
+            }
         }
 
-        function installLibrary() {
-            pyscript.run("install_library()");
+        // Функция для восстановления состояния при загрузке
+        function restoreState() {
+            const savedCode = localStorage.getItem('python_code');
+            if (savedCode) {
+                document.getElementById('python_code').value = savedCode;
+            }
         }
 
-        function stopPython() {
-            location.reload(); // Перезагружаем страницу для остановки выполнения
-        }
+        // Загружаем Pyodide при открытии страницы
+        loadPyodideAndRunCode();
     </script>
-
 </body>
 </html>
