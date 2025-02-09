@@ -1,6 +1,8 @@
 <!DOCTYPE html>
-<html>
+<html lang="ru">
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Python в браузере</title>
     <style>
         body {
@@ -23,13 +25,14 @@
             cursor: pointer;
             margin: 10px 0;
         }
+        button.stop {
+            background: #f44336;
+        }
         #output {
             background: #f0f0f0;
             padding: 10px;
             white-space: pre-wrap;
-        }
-        .error {
-            color: red;
+            min-height: 50px;
         }
     </style>
 </head>
@@ -37,13 +40,14 @@
     <h1>Запустите Python-код в браузере 🐍</h1>
     <textarea id="code" placeholder="Введите код Python...">
 import time
-while True:
-    print("Работаю...")
+for i in range(5):
+    print(f"Шаг {i}")
     time.sleep(1)
+print("Готово!")
     </textarea>
     <br>
     <button onclick="runPython()">Выполнить код</button>
-    <button onclick="stopPython()" style="background: #f44336;">Остановить код</button>
+    <button onclick="stopPython()" class="stop">Остановить код</button>
     <h3>Установка библиотек:</h3>
     <input type="text" id="library" placeholder="Введите название библиотеки...">
     <button onclick="installLibrary()">Установить библиотеку</button>
@@ -53,75 +57,89 @@ while True:
     <!-- Подключаем Pyodide -->
     <script src="https://cdn.jsdelivr.net/pyodide/v0.23.4/full/pyodide.js"></script>
     <script>
-        // Инициализация Pyodide
         let pyodide;
-        let isRunning = false; // Флаг для отслеживания выполнения кода
+        let isRunning = false;
+        let isPyodideReady = false;
 
         async function initializePyodide() {
             pyodide = await loadPyodide({
                 indexURL: "https://cdn.jsdelivr.net/pyodide/v0.23.4/full/"
             });
+            await pyodide.loadPackage("micropip");
+            isPyodideReady = true;
             console.log("Pyodide загружен!");
         }
 
-        // Запуск Python-кода
         async function runPython() {
+            if (!isPyodideReady) {
+                alert("Pyodide ещё не загружен. Подождите...");
+                return;
+            }
             if (isRunning) {
                 alert("Код уже выполняется!");
                 return;
             }
             isRunning = true;
-            let code = document.getElementById("code").value;
-            let output = document.getElementById("output");
+            const code = document.getElementById("code").value;
+            const output = document.getElementById("output");
+            output.innerText = "⏳ Выполнение...";
 
             try {
-                // Перенаправляем вывод Python в браузер
-                pyodide.runPython(`
+                let capture = await pyodide.runPythonAsync(`
                     import sys
-                    from js import console
-                    sys.stdout = sys.stderr = console
+                    from pyodide.ffi import to_js
+
+                    class PyodideLogger:
+                        def __init__(self):
+                            self.logs = []
+
+                        def write(self, msg):
+                            self.logs.append(msg)
+
+                        def flush(self):
+                            pass
+
+                        def get_logs(self):
+                            return to_js("".join(self.logs))
+
+                    logger = PyodideLogger()
+                    sys.stdout = sys.stderr = logger
+                    logger
                 `);
 
-                // Выполняем код асинхронно
-                setTimeout(async () => {
-                    try {
-                        await pyodide.runPythonAsync(code);
-                        output.innerText = "✅ Код выполнен!";
-                    } catch (e) {
-                        output.innerText = "🚨 Ошибка:\n" + e.message;
-                    } finally {
-                        isRunning = false;
-                    }
-                }, 0);
+                await pyodide.runPythonAsync(code);
+
+                const logs = await capture.get_logs();
+                output.innerText = logs || "✅ Код выполнен!";
             } catch (e) {
-                output.innerText = "🚨 Ошибка:\n" + e.message;
+                output.innerText = `🚨 Ошибка: ${e.message}`;
+            } finally {
                 isRunning = false;
             }
         }
 
-        // Остановка выполнения кода
         function stopPython() {
             if (!isRunning) {
                 alert("Нет выполняющегося кода!");
                 return;
             }
-            isRunning = false;
-            location.reload(); // Перезагружаем страницу для остановки кода
-            console.log("Код остановлен!");
+            location.reload();
         }
 
-        // Установка библиотек
         async function installLibrary() {
-            let library = document.getElementById("library").value;
+            if (!isPyodideReady) {
+                alert("Pyodide ещё не загружен. Подождите...");
+                return;
+            }
+            const library = document.getElementById("library").value;
             if (!library) {
                 alert("Введите название библиотеки!");
                 return;
             }
-            let output = document.getElementById("output");
+            const output = document.getElementById("output");
             output.innerText = `⏳ Устанавливаю библиотеку ${library}...`;
 
             try {
-                await pyodide.loadPackage("micropip");
                 await pyodide.runPythonAsync(`
                     import micropip
                     micropip.install("${library}")
@@ -132,7 +150,6 @@ while True:
             }
         }
 
-        // Инициализация Pyodide при загрузке страницы
         initializePyodide();
     </script>
 </body>
