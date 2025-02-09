@@ -80,8 +80,9 @@
 
     <script>
         async function loadPyodideAndPackages() {
-            window.pyodide = await loadPyodide();  // Загружаем Pyodide
-            await pyodide.loadPackage('micropip');  // Устанавливаем micropip
+            window.pyodide = await loadPyodide();
+            await pyodide.loadPackage('micropip');
+            await pyodide.loadPackage('requests');  // Устанавливаем библиотеку requests
         }
 
         async function runPython() {
@@ -120,7 +121,7 @@
             }
         }
 
-        loadPyodideAndPackages();  // Загружаем Pyodide при старте
+        loadPyodideAndPackages();
     </script>
 
 </body>
