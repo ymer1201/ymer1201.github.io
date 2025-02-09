@@ -112,7 +112,7 @@ print("Привет, мир!")
     <button class="install-btn" onclick="installLibrary()">Установить библиотеку</button>
 
     <h3>Результат:</h3>
-    <div id="output">Вывод появится здесь...</div>
+    <div id="output"></div>
 
     <py-script>
         from pyscript import display
@@ -164,6 +164,9 @@ print("Привет, мир!")
         function stopPython() {
             location.reload(); // Перезагружаем страницу для остановки выполнения
         }
+
+        // Очистка выводимых данных при загрузке
+        document.getElementById('output').innerHTML = '';
     </script>
 
 </body>
