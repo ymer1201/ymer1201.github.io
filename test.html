@@ -4,11 +4,8 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
     <meta name="theme-color" content="#1a1b26" />
-    <meta name="description" content="Online Code Editor with multiple language support" />
-    <title>Mega Code Editor</title>
-    <!-- Monaco Editor -->
-    <link rel="stylesheet" data-name="vs/editor/editor.main" href="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.36.1/min/vs/editor/editor.main.min.css" />
-    <!-- XTerm.js -->
+    <title>Mobile Code Editor</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.36.1/min/vs/editor/editor.main.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/xterm@5.1.0/css/xterm.css" />
     <style>
         :root {
@@ -25,72 +22,23 @@
             margin: 0;
             padding: 0;
             box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
         }
 
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            font-family: -apple-system, system-ui, sans-serif;
             background-color: var(--primary-color);
             color: var(--text-color);
-            line-height: 1.6;
             height: 100vh;
             overflow: hidden;
         }
 
+        /* Mobile-first подход */
         .app-container {
             display: flex;
             flex-direction: column;
             height: 100vh;
-        }
-
-        @media (min-width: 768px) {
-            .app-container {
-                flex-direction: row;
-            }
-        }
-
-        .sidebar {
-            background-color: var(--secondary-color);
-            border-bottom: 1px solid var(--border-color);
-            padding: 1rem;
-            display: flex;
-            flex-direction: column;
-            gap: 1rem;
-            height: auto;
-            min-height: 200px;
-        }
-
-        @media (min-width: 768px) {
-            .sidebar {
-                width: 300px;
-                height: 100vh;
-                border-right: 1px solid var(--border-color);
-                border-bottom: none;
-            }
-        }
-
-        .main-content {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            height: calc(100vh - 200px);
-        }
-
-        @media (min-width: 768px) {
-            .main-content {
-                height: 100vh;
-            }
-        }
-
-        .editor-container {
-            flex: 1;
-            min-height: 0;
-        }
-
-        .terminal-container {
-            height: 30vh;
-            background-color: var(--secondary-color);
-            padding: 0.5rem;
-            border-top: 1px solid var(--border-color);
+            overflow: hidden;
         }
 
         .toolbar {
@@ -100,46 +48,51 @@
             padding: 0.75rem;
             background-color: var(--secondary-color);
             border-bottom: 1px solid var(--border-color);
-            align-items: center;
         }
 
-        .file-section {
+        .editor-container {
             flex: 1;
+            min-height: 0;
         }
 
-        .file-list {
-            list-style: none;
-            margin-top: 0.5rem;
-            overflow-y: auto;
-            max-height: 150px;
+        .terminal-container {
+            height: 35vh;
+            background-color: var(--secondary-color);
+            border-top: 1px solid var(--border-color);
         }
 
-        @media (min-width: 768px) {
-            .file-list {
-                max-height: calc(100vh - 300px);
-            }
-        }
-
-        .file-item {
-            padding: 0.75rem;
-            cursor: pointer;
-            border-radius: 6px;
-            margin-bottom: 0.5rem;
-            background-color: rgba(255, 255, 255, 0.05);
+        /* Боковая панель для мобильных устройств */
+        .sidebar {
+            position: fixed;
+            top: 0;
+            left: -100%;
+            width: 80%;
+            height: 100vh;
+            background-color: var(--secondary-color);
+            transition: left 0.3s ease;
+            z-index: 1000;
+            padding: 1rem;
             display: flex;
-            justify-content: space-between;
-            align-items: center;
-            transition: all 0.2s;
-            font-size: 0.9rem;
+            flex-direction: column;
         }
 
-        .file-item:active {
-            transform: scale(0.98);
+        .sidebar.active {
+            left: 0;
         }
 
-        .file-item.active {
-            background-color: var(--accent-color);
-            color: #ffffff;
+        .sidebar-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 999;
+        }
+
+        .sidebar-overlay.active {
+            display: block;
         }
 
         .btn {
@@ -147,25 +100,19 @@
             color: white;
             border: none;
             padding: 0.75rem 1rem;
-            border-radius: 6px;
-            cursor: pointer;
-            font-size: 0.875rem;
+            border-radius: 8px;
+            font-size: 1rem;
             font-weight: 500;
+            cursor: pointer;
             display: inline-flex;
             align-items: center;
             gap: 0.5rem;
-            transition: all 0.2s;
             touch-action: manipulation;
-            -webkit-tap-highlight-color: transparent;
+            min-height: 44px;
         }
 
         .btn:active {
             transform: translateY(1px);
-        }
-
-        .btn[disabled] {
-            opacity: 0.6;
-            cursor: not-allowed;
         }
 
         .select {
@@ -173,22 +120,32 @@
             color: var(--text-color);
             border: 1px solid var(--border-color);
             padding: 0.75rem;
-            border-radius: 6px;
+            border-radius: 8px;
+            font-size: 1rem;
+            min-height: 44px;
             width: 100%;
-            max-width: 200px;
-            font-size: 0.875rem;
-            appearance: none;
-            cursor: pointer;
         }
 
-        .input {
-            background-color: var(--primary-color);
-            color: var(--text-color);
-            border: 1px solid var(--border-color);
+        .file-list {
+            list-style: none;
+            margin-top: 1rem;
+            overflow-y: auto;
+            flex: 1;
+        }
+
+        .file-item {
             padding: 0.75rem;
-            border-radius: 6px;
-            width: 100%;
-            font-size: 0.875rem;
+            margin-bottom: 0.5rem;
+            background-color: rgba(255, 255, 255, 0.05);
+            border-radius: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            min-height: 44px;
+        }
+
+        .file-item.active {
+            background-color: var(--accent-color);
         }
 
         .notification {
@@ -196,67 +153,85 @@
             bottom: 1rem;
             left: 50%;
             transform: translateX(-50%);
-            padding: 0.75rem 1.5rem;
-            border-radius: 6px;
+            padding: 1rem;
+            border-radius: 8px;
             background-color: var(--success-color);
             color: white;
-            font-size: 0.875rem;
-            z-index: 1000;
-            animation: slideUp 0.3s ease-out;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+            z-index: 2000;
+            animation: slideUp 0.3s ease;
+            max-width: 90%;
+            text-align: center;
         }
 
         @keyframes slideUp {
-            from {
-                transform: translate(-50%, 100%);
-                opacity: 0;
-            }
-            to {
-                transform: translate(-50%, 0);
-                opacity: 1;
-            }
+            from { transform: translate(-50%, 100%); opacity: 0; }
+            to { transform: translate(-50%, 0); opacity: 1; }
         }
 
-        @media (max-width: 480px) {
-            .btn {
-                padding: 0.6rem 0.8rem;
-                font-size: 0.8rem;
+        /* Планшеты и десктопы */
+        @media (min-width: 768px) {
+            .app-container {
+                flex-direction: row;
             }
 
-            .select, .input {
-                font-size: 0.8rem;
-                padding: 0.6rem;
+            .sidebar {
+                position: relative;
+                left: 0;
+                width: 300px;
+                border-right: 1px solid var(--border-color);
             }
 
-            .toolbar {
-                padding: 0.5rem;
+            .sidebar-toggle {
+                display: none;
+            }
+
+            .main-content {
+                flex: 1;
+                display: flex;
+                flex-direction: column;
+            }
+
+            .editor-container {
+                flex: 1;
+            }
+
+            .terminal-container {
+                height: 30vh;
             }
         }
     </style>
 </head>
 <body>
+    <div class="sidebar-overlay"></div>
     <div class="app-container">
         <div class="sidebar">
-            <div class="file-section">
-                <button class="btn" onclick="createNewFile()">New File</button>
-                <div class="file-list" id="fileList"></div>
-            </div>
-            <div class="settings">
-                <select class="select" id="languageSelect" onchange="changeLanguage()">
+            <button class="btn" onclick="createNewFile()">New File</button>
+            <div class="file-list" id="fileList"></div>
+            <div style="margin-top: auto; padding-top: 1rem;">
+                <select class="select" id="languageSelect" style="margin-bottom: 1rem;">
                     <option value="python">Python</option>
                     <option value="javascript">JavaScript</option>
                     <option value="typescript">TypeScript</option>
                     <option value="html">HTML</option>
                     <option value="css">CSS</option>
                 </select>
+                <select class="select" id="packageManager" style="margin-bottom: 1rem;">
+                    <option value="pip">pip (Python)</option>
+                    <option value="npm">npm (Node.js)</option>
+                </select>
+                <input type="text" class="select" id="packageName" placeholder="Package name">
+                <div style="display: flex; gap: 0.5rem; margin-top: 0.5rem;">
+                    <button class="btn" style="flex: 1" onclick="installPackage()">Install</button>
+                    <button class="btn" style="flex: 1" onclick="listPackages()">List</button>
+                </div>
             </div>
         </div>
 
         <div class="main-content">
             <div class="toolbar">
-                <button class="btn" onclick="runCode()">Run</button>
-                <button class="btn" onclick="saveToFile()">Save</button>
-                <button class="btn" onclick="shareCode()">Share</button>
+                <button class="btn sidebar-toggle" onclick="toggleSidebar()">☰</button>
+                <button class="btn" onclick="runCode()">▶ Run</button>
+                <button class="btn" onclick="saveFile()">💾 Save</button>
             </div>
             <div class="editor-container" id="editor"></div>
             <div class="terminal-container" id="terminal"></div>
@@ -274,29 +249,34 @@
     <script src="https://cdn.jsdelivr.net/npm/xterm-addon-fit@0.7.0/lib/xterm-addon-fit.min.js"></script>
 
     <script>
-        // Global variables
         let editor;
         let terminal;
         let files = [];
         let currentFile = null;
 
-        // Initialize Monaco Editor
+        // Мобильное меню
+        function toggleSidebar() {
+            document.querySelector('.sidebar').classList.toggle('active');
+            document.querySelector('.sidebar-overlay').classList.toggle('active');
+        }
+
+        document.querySelector('.sidebar-overlay').addEventListener('click', toggleSidebar);
+
+        // Инициализация Monaco Editor
         require(['vs/editor/editor.main'], function() {
             editor = monaco.editor.create(document.getElementById('editor'), {
-                value: '# Welcome to Mega Code Editor\n# Select a language and start coding!',
+                value: '# Welcome to Mobile Code Editor\n# Start coding!',
                 language: 'python',
                 theme: 'vs-dark',
                 automaticLayout: true,
                 minimap: { enabled: false },
-                fontSize: 14,
-                lineNumbers: 'on',
-                scrollBeyondLastLine: false,
+                fontSize: 16,
                 wordWrap: 'on',
-                padding: { top: 10 }
+                scrollBeyondLastLine: false
             });
 
-            // Custom theme
-            monaco.editor.defineTheme('megaTheme', {
+            // Тема для редактора
+            monaco.editor.defineTheme('mobileTheme', {
                 base: 'vs-dark',
                 inherit: true,
                 rules: [],
@@ -307,65 +287,58 @@
                     'editor.selectionBackground': '#515c7e'
                 }
             });
-            monaco.editor.setTheme('megaTheme');
+            monaco.editor.setTheme('mobileTheme');
 
-            // Handle window resize
+            // Подстройка размера при изменении окна
             window.addEventListener('resize', () => {
                 editor.layout();
             });
         });
 
-        // Initialize Terminal
-        terminal = new Terminal({
-            theme: {
-                background: '#24283b',
-                foreground: '#c0caf5',
-                cursor: '#c0caf5',
-                selection: '#515c7e',
-                black: '#1a1b26',
-                red: '#f7768e',
-                green: '#9ece6a',
-                yellow: '#e0af68',
-                blue: '#7aa2f7',
-                magenta: '#bb9af7',
-                cyan: '#7dcfff',
-                white: '#a9b1d6'
-            },
-            fontSize: 14,
-            fontFamily: 'Menlo, Monaco, Consolas, monospace',
-            cursorBlink: true,
-            cursorStyle: 'block',
-            lineHeight: 1.2,
-            scrollback: 1000
-        });
+        // Инициализация терминала
+        document.addEventListener('DOMContentLoaded', () => {
+            terminal = new Terminal({
+                theme: {
+                    background: '#24283b',
+                    foreground: '#c0caf5',
+                    cursor: '#c0caf5'
+                },
+                fontSize: 16,
+                fontFamily: 'Menlo, Monaco, Consolas, monospace',
+                cursorBlink: true,
+                rows: 10
+            });
 
-        const fitAddon = new FitAddon.FitAddon();
-        terminal.loadAddon(fitAddon);
-        terminal.open(document.getElementById('terminal'));
-        fitAddon.fit();
-
-        window.addEventListener('resize', () => {
+            const fitAddon = new FitAddon.FitAddon();
+            terminal.loadAddon(fitAddon);
+            terminal.open(document.getElementById('terminal'));
             fitAddon.fit();
+
+            window.addEventListener('resize', () => {
+                fitAddon.fit();
+            });
+
+            terminal.writeln('Welcome to Mobile Code Editor');
+            terminal.writeln('Ready to code...');
         });
 
-        // File Management
-        function createNewFile() {
+        // Управление файлами
+        async function createNewFile() {
             const name = prompt('Enter file name:');
             if (!name) return;
 
-            const language = document.getElementById('languageSelect').value;
             const file = {
                 id: Date.now(),
                 name,
                 content: '',
-                language
+                language: document.getElementById('languageSelect').value
             };
 
             files.push(file);
             saveFiles();
             updateFileList();
             selectFile(file);
-            showNotification('File created successfully');
+            showNotification('File created');
         }
 
         function updateFileList() {
@@ -373,14 +346,14 @@
             fileList.innerHTML = '';
 
             files.forEach(file => {
-                const li = document.createElement('div');
-                li.className = `file-item ${currentFile?.id === file.id ? 'active' : ''}`;
-                li.innerHTML = `
+                const item = document.createElement('div');
+                item.className = `file-item ${currentFile?.id === file.id ? 'active' : ''}`;
+                item.innerHTML = `
                     <span>${file.name}</span>
                     <button class="btn" onclick="event.stopPropagation(); deleteFile(${file.id})">×</button>
                 `;
-                li.onclick = () => selectFile(file);
-                fileList.appendChild(li);
+                item.onclick = () => selectFile(file);
+                fileList.appendChild(item);
             });
         }
 
@@ -390,6 +363,9 @@
             editor.updateOptions({ language: file.language });
             document.getElementById('languageSelect').value = file.language;
             updateFileList();
+            if (window.innerWidth < 768) {
+                toggleSidebar();
+            }
         }
 
         function deleteFile(id) {
@@ -405,7 +381,7 @@
             showNotification('File deleted');
         }
 
-        function saveToFile() {
+        function saveFile() {
             if (!currentFile) {
                 showNotification('No file selected', true);
                 return;
@@ -417,65 +393,103 @@
             showNotification('File saved');
         }
 
-        // Local Storage
+        // Локальное хранилище
         function saveFiles() {
-            localStorage.setItem('mega-editor-files', JSON.stringify(files));
+            localStorage.setItem('mobile-editor-files', JSON.stringify(files));
         }
 
         function loadFiles() {
-            const saved = localStorage.getItem('mega-editor-files');
+            const saved = localStorage.getItem('mobile-editor-files');
             if (saved) {
                 files = JSON.parse(saved);
                 updateFileList();
             }
         }
 
-        // Code Execution (Mock)
-        function runCode() {
-            const code = editor.getValue();
-            if (!code.trim()) {
+        // Выполнение кода
+        async function runCode() {
+            const code = editor.getValue().trim();
+            if (!code) {
                 showNotification('No code to run', true);
                 return;
             }
 
+            const language = document.getElementById('languageSelect').value;
+            
             terminal.clear();
-            terminal.writeln('Executing code...');
-            terminal.writeln('Note: This is a demo version. Code execution is simulated.');
-            terminal.writeln('Output:');
-            terminal.writeln(code);
-        }
+            terminal.writeln('Running code...\n');
 
-        // Sharing
-        function shareCode() {
-            const code = editor.getValue();
-            const language = document.getElementById('languageSelect').value;
-            
-            // Create shareable URL with code and language as parameters
-            const params = new URLSearchParams();
-            params.append('code', code);
-            params.append('language', language);
-            
-            const url = `${window.location.origin}${window.location.pathname}?${params.toString()}`;
-            
-            // Copy to clipboard
-            navigator.clipboard.writeText(url).then(() => {
-                showNotification('Share URL copied to clipboard');
-            }).catch(() => {
-                showNotification('Failed to copy URL', true);
-            });
-        }
-
-        // Language Change
-        function changeLanguage() {
-            const language = document.getElementById('languageSelect').value;
-            editor.updateOptions({ language });
-            if (currentFile) {
-                currentFile.language = language;
-                saveFiles();
+            try {
+                // Простая эмуляция выполнения Python кода
+                if (language === 'python') {
+                    const printRegex = /print\((.*?)\)/g;
+                    const matches = code.match(printRegex);
+                    
+                    if (matches) {
+                        matches.forEach(match => {
+                            const content = match.slice(6, -1).trim();
+                            const output = content.startsWith('"') || content.startsWith("'") 
+                                ? content.slice(1, -1) 
+                                : eval(content);
+                            terminal.writeln(output);
+                        });
+                    } else {
+                        terminal.writeln('No output');
+                    }
+                }
+                // JavaScript можно выполнить напрямую
+                else if (language === 'javascript') {
+                    try {
+                        const result = eval(code);
+                        if (result !== undefined) {
+                            terminal.writeln(result.toString());
+                        }
+                    } catch (error) {
+                        terminal.writeln('Error: ' + error.message);
+                    }
+                }
+                else {
+                    terminal.writeln('Language not supported for execution');
+                }
+            } catch (error) {
+                terminal.writeln('Error: ' + error.message);
             }
         }
 
-        // Utilities
+        // Управление пакетами
+        async function installPackage() {
+            const packageName = document.getElementById('packageName').value.trim();
+            if (!packageName) {
+                showNotification('Enter package name', true);
+                return;
+            }
+
+            const manager = document.getElementById('packageManager').value;
+            terminal.clear();
+            terminal.writeln(`Installing ${packageName}...`);
+            
+            // В этой версии только эмуляция
+            setTimeout(() => {
+                terminal.writeln(`Successfully installed ${packageName}`);
+            }, 1000);
+        }
+
+        async function listPackages() {
+            const manager = document.getElementById('packageManager').value;
+            terminal.clear();
+            terminal.writeln('Installed packages:');
+            
+            // Эмуляция списка пакетов
+            if (manager === 'pip') {
+                terminal.writeln('python-package-1 1.0.0');
+                terminal.writeln('python-package-2 2.0.0');
+            } else {
+                terminal.writeln('node-package-1@1.0.0');
+                terminal.writeln('node-package-2@2.0.0');
+            }
+        }
+
+        // Утилиты
         function showNotification(message, isError = false) {
             const notification = document.createElement('div');
             notification.className = 'notification';
@@ -489,12 +503,23 @@
             }, 3000);
         }
 
-        // Load saved files on start
-        loadFiles();
-        terminal.writeln('Welcome to Mega Code Editor');
-        terminal.writeln('Ready to code...');
+        // Горячие клавиши
+        document.addEventListener('keydown', (e) => {
+            if (e.ctrlKey || e.metaKey) {
+                if (e.key === 's') {
+                    e.preventDefault();
+                    saveFile();
+                } else if (e.key === 'Enter') {
+                    e.preventDefault();
+                    runCode();
+                }
+            }
+        });
 
-        // Handle URL parameters for shared code
+        // Инициализация
+        loadFiles();
+
+        // Обработка параметров URL для shared кода
         const urlParams = new URLSearchParams(window.location.search);
         if (urlParams.has('code') && urlParams.has('language')) {
             const code = urlParams.get('code');
@@ -503,9 +528,6 @@
             editor.updateOptions({ language });
             document.getElementById('languageSelect').value = language;
         }
-
-        // Mobile optimization
-        document.addEventListener('touchstart', function() {}, true);
     </script>
 </body>
 </html>
