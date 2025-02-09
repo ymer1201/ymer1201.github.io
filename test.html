@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Python Executor</title>
+    <title>Python Executor with Telegram API</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -51,36 +51,21 @@
         .output {
             margin-top: 20px;
         }
-        #console {
-            font-family: monospace;
-            font-size: 12px;
-            color: #555;
-            background-color: #eee;
-            padding: 15px;
-            margin-top: 20px;
-            max-height: 300px;
-            overflow-y: auto;
-        }
     </style>
 </head>
 <body>
 
-    <h1>Python Executor in Browser</h1>
+    <h1>Python Executor</h1>
 
-    <textarea id="python-code" placeholder="Enter your Python code here"></textarea><br>
-    
-    <button onclick="runPython()">Run Code</button>
-    <button onclick="stopExecution()">Stop Code</button><br>
-    
+    <textarea id="python-code" placeholder="Enter Python code here"></textarea><br>
+    <button onclick="runPython()">Run Python Code</button><br><br>
+
+    <h2>Send Message to Telegram Bot</h2>
+    <input type="text" id="telegram-message" placeholder="Enter message to send to Telegram Bot">
+    <button onclick="sendMessageToTelegram()">Send to Telegram</button>
+
     <h2>Output:</h2>
     <pre id="output"></pre>
-    
-    <h2>Console Output:</h2>
-    <div id="console"></div>
-
-    <h3>Install/Update Libraries</h3>
-    <input id="install-library" type="text" placeholder="Library name (e.g., numpy)">
-    <button onclick="installLibrary()">Install/Update Library</button>
 
     <script src="https://cdn.jsdelivr.net/npm/pyodide@0.22.1/pyodide.js"></script>
     <script>
@@ -96,47 +81,34 @@
         async function runPython() {
             const pythonCode = document.getElementById("python-code").value;
             const outputElement = document.getElementById("output");
-            const consoleElement = document.getElementById("console");
 
             outputElement.textContent = "Running...\n";
-            consoleElement.textContent = ""; // Очищаем консоль перед запуском
 
             try {
                 // Запуск Python кода
                 const result = await pyodide.runPythonAsync(pythonCode);
                 outputElement.textContent = result;
-                consoleElement.textContent = "Code executed successfully.";
             } catch (error) {
                 outputElement.textContent = "Error: " + error.message;
-                consoleElement.textContent = "Error in execution.";
             }
         }
 
-        // Функция для остановки выполнения кода
-        function stopExecution() {
-            // В Pyodide нет прямой функции остановки, но можно просто очистить результат
-            document.getElementById("output").textContent = "Execution stopped.";
-            document.getElementById("console").textContent = "Execution stopped.";
-        }
+        // Функция для отправки сообщения в Telegram
+        async function sendMessageToTelegram() {
+            const message = document.getElementById("telegram-message").value;
+            const token = "YOUR_BOT_TOKEN"; // Замените на ваш токен Telegram-бота
+            const chatId = "YOUR_CHAT_ID"; // Замените на ваш chat_id
 
-        // Функция для установки и обновления библиотек
-        async function installLibrary() {
-            const libraryName = document.getElementById("install-library").value;
-            const consoleElement = document.getElementById("console");
-
-            if (!libraryName) {
-                alert("Please enter a library name.");
-                return;
-            }
-
-            consoleElement.textContent = `Installing ${libraryName}...`;
-
+            const url = `https://api.telegram.org/bot${token}/sendMessage?chat_id=${chatId}&text=${message}`;
+            
             try {
-                // Установка библиотеки с помощью Pyodide
-                await pyodide.loadPackage(libraryName);
-                consoleElement.textContent = `${libraryName} installed/updated successfully.`;
+                const response = await fetch(url);
+                const data = await response.json();
+                console.log("Message sent:", data);
+                alert("Message sent to Telegram!");
             } catch (error) {
-                consoleElement.textContent = "Error: " + error.message;
+                console.error("Error sending message:", error);
+                alert("Failed to send message.");
             }
         }
 
