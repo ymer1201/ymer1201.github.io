@@ -4,57 +4,94 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Python в браузере 🐍</title>
-    
+
     <script defer src="https://pyscript.net/latest/pyscript.js"></script>
 
     <style>
         body {
-            font-family: Arial, sans-serif;
+            font-family: 'Roboto', sans-serif;
+            background: #f1f2f6;
+            color: #333;
+            text-align: center;
             max-width: 800px;
             margin: 20px auto;
             padding: 20px;
-            background-color: #f9f9f9;
-            text-align: center;
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
         }
+
         h1 {
-            color: #333;
+            font-size: 30px;
+            color: #4C8BF5;
         }
+
         textarea {
             width: 100%;
-            height: 200px;
-            padding: 10px;
+            height: 180px;
+            padding: 15px;
             font-family: monospace;
             border: 1px solid #ccc;
-            border-radius: 5px;
+            border-radius: 8px;
+            resize: none;
+            background-color: #fff;
         }
+
         button {
-            padding: 10px 20px;
+            padding: 12px 25px;
+            font-size: 16px;
             border: none;
             cursor: pointer;
-            margin: 10px 5px;
-            border-radius: 5px;
-            font-size: 16px;
+            border-radius: 8px;
+            margin: 10px;
+            transition: 0.3s ease;
         }
+
         .run-btn {
             background: #4CAF50;
             color: white;
         }
+
+        .run-btn:hover {
+            background: #45a049;
+        }
+
         .stop-btn {
             background: #f44336;
             color: white;
         }
+
+        .stop-btn:hover {
+            background: #e53935;
+        }
+
         .install-btn {
             background: #007bff;
             color: white;
         }
+
+        .install-btn:hover {
+            background: #0056b3;
+        }
+
         #output {
             background: #fff;
-            padding: 15px;
-            border-radius: 5px;
+            padding: 20px;
+            margin-top: 20px;
+            border-radius: 8px;
             border: 1px solid #ccc;
-            text-align: left;
             white-space: pre-wrap;
-            margin-top: 15px;
+            word-wrap: break-word;
+            font-family: monospace;
+            font-size: 14px;
+            color: #333;
+        }
+
+        input[type="text"] {
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            width: 80%;
+            margin-bottom: 10px;
         }
     </style>
 </head>
@@ -109,12 +146,21 @@ print("Привет, мир!")
     </py-script>
 
     <script>
+        // Сохранение кода в localStorage
+        if(localStorage.getItem('savedCode')) {
+            document.getElementById('code').value = localStorage.getItem('savedCode');
+        }
+
         function runPython() {
+            const code = document.getElementById('code').value;
+            localStorage.setItem('savedCode', code); // Сохранение кода
             pyscript.run("run_python()");
         }
+
         function installLibrary() {
             pyscript.run("install_library()");
         }
+
         function stopPython() {
             location.reload(); // Перезагружаем страницу для остановки выполнения
         }
