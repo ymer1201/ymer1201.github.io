@@ -82,7 +82,6 @@
     </style>
 </head>
 <body>
-
     <div class="chat-container">
         <div class="chat-box" id="chatBox">
             <div class="message bot-message">Привет! Я GPT-4o. Спроси что-нибудь.</div>
@@ -114,7 +113,7 @@
             chatBox.scrollTop = chatBox.scrollHeight;
 
             try {
-                let response = await fetch("http://127.0.0.1:9001/gpt4o", {
+                let response = await fetch("http://127.0.0.1:9042/gpt4o", {
                     method: "POST",
                     headers: {
                         "Content-Type": "application/json"
