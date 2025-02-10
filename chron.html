@@ -12,17 +12,18 @@
         }
         body {
             font-family: 'Arial', sans-serif;
-            background-color: #f5f5f5;
+            background-color: #2C2F36; /* Темный фон */
             display: flex;
             justify-content: center;
             align-items: center;
             min-height: 100vh;
             margin: 0;
+            color: white;
         }
         .chat-container {
             width: 100%;
             max-width: 500px;
-            background: #fff;
+            background: #3A3F47; /* Темный контейнер */
             border-radius: 10px;
             box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
             overflow: hidden;
@@ -42,8 +43,8 @@
             overflow-y: auto;
             flex-grow: 1;
             height: 300px;
-            border-bottom: 1px solid #ddd;
-            background-color: #f9f9f9;
+            border-bottom: 1px solid #444;
+            background-color: #2C2F36;
         }
         .message {
             margin-bottom: 10px;
@@ -59,22 +60,24 @@
             align-self: flex-end;
         }
         .gpt-message {
-            background-color: #f1f1f1;
-            color: #333;
+            background-color: #444;
+            color: #ddd;
             align-self: flex-start;
         }
         .input-container {
             display: flex;
             padding: 10px;
-            background-color: #f9f9f9;
-            border-top: 1px solid #ddd;
+            background-color: #3A3F47;
+            border-top: 1px solid #444;
         }
         input[type="text"] {
             flex-grow: 1;
             padding: 10px;
-            border: 1px solid #ddd;
+            border: 1px solid #444;
             border-radius: 5px;
             font-size: 16px;
+            background-color: #555;
+            color: white;
         }
         button {
             padding: 10px;
