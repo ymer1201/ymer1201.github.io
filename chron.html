@@ -8,7 +8,7 @@
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap');
         body {
             font-family: 'Inter', sans-serif;
-            background: #0d1117;
+            background: linear-gradient(to right, #232526, #414345);
             color: white;
             display: flex;
             flex-direction: column;
@@ -26,7 +26,8 @@
             display: flex;
             flex-direction: column;
             overflow: hidden;
-            box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.5);
+            box-shadow: 0px 4px 15px rgba(0, 0, 0, 0.5);
+            transition: all 0.3s ease;
         }
         .chat-box {
             flex-grow: 1;
@@ -44,6 +45,8 @@
             font-size: 16px;
             line-height: 1.4;
             word-wrap: break-word;
+            position: relative;
+            transition: all 0.2s ease;
         }
         .user-message {
             background: #238636;
@@ -52,6 +55,14 @@
         .bot-message {
             background: #2f3b4b;
             align-self: flex-start;
+        }
+        .code-message {
+            background: #2b2b2b;
+            border-radius: 10px;
+            padding: 15px;
+            font-family: 'Courier New', monospace;
+            white-space: pre-wrap;
+            color: #f0f0f0;
         }
         .input-container {
             display: flex;
@@ -68,6 +79,10 @@
             color: white;
             outline: none;
             font-size: 16px;
+            transition: background 0.2s ease;
+        }
+        input:focus {
+            background: #2a2e35;
         }
         button {
             margin-left: 10px;
@@ -78,12 +93,54 @@
             border-radius: 6px;
             font-size: 16px;
             cursor: pointer;
+            transition: background 0.3s ease;
+        }
+        button:hover {
+            background: #1c6b2f;
+        }
+        .login-container {
+            margin-top: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .login-btn {
+            background-color: #0088cc;
+            padding: 12px 20px;
+            border-radius: 6px;
+            color: white;
+            text-align: center;
+            font-size: 16px;
+            cursor: pointer;
+        }
+        .login-btn:hover {
+            background-color: #006f99;
+        }
+        .copy-btn {
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            padding: 6px 10px;
+            background: #4e8a4e;
+            border: none;
+            color: white;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            display: none;
+        }
+        .message:hover .copy-btn {
+            display: block;
         }
     </style>
 </head>
 <body>
 
-    <div class="chat-container">
+    <div class="login-container" id="loginContainer">
+        <button class="login-btn" onclick="loginWithTelegram()">Войти через Telegram</button>
+    </div>
+
+    <div class="chat-container" id="chatContainer" style="display:none;">
         <div class="chat-box" id="chatBox">
             <div class="message bot-message">Привет! Я GPT-4o. Спроси что-нибудь.</div>
         </div>
@@ -94,6 +151,24 @@
     </div>
 
     <script>
+        // Сохранение сообщений в localStorage
+        if(localStorage.getItem("messages")) {
+            document.getElementById("chatBox").innerHTML = localStorage.getItem("messages");
+        }
+
+        // Функция для логина через Telegram
+        function loginWithTelegram() {
+            // Здесь нужно использовать Telegram Login API для регистрации пользователя
+            // Пример вызова:
+            // window.Telegram.WebApp.init();
+            // window.Telegram.WebApp.login();
+            
+            // После успешной регистрации скрываем кнопку входа
+            document.getElementById("loginContainer").style.display = "none";
+            document.getElementById("chatContainer").style.display = "block";
+        }
+
+        // Функция отправки сообщений
         async function sendMessage() {
             let inputField = document.getElementById("userInput");
             let message = inputField.value.trim();
@@ -123,12 +198,41 @@
                 });
 
                 let data = await response.json();
-                botMessage.innerText = data.reply;
+                if (isCode(data.reply)) {
+                    let codeMessage = document.createElement("div");
+                    codeMessage.className = "message bot-message code-message";
+                    codeMessage.innerText = data.reply;
+                    let copyBtn = document.createElement("button");
+                    copyBtn.className = "copy-btn";
+                    copyBtn.innerText = "Скопировать";
+                    copyBtn.onclick = () => copyToClipboard(data.reply);
+                    codeMessage.appendChild(copyBtn);
+                    chatBox.appendChild(codeMessage);
+                } else {
+                    botMessage.innerText = data.reply;
+                }
+
+                localStorage.setItem("messages", document.getElementById("chatBox").innerHTML);
             } catch (error) {
                 botMessage.innerText = "Ошибка: " + error;
             }
 
             chatBox.scrollTop = chatBox.scrollHeight;
+        }
+
+        // Функция для проверки, является ли ответ кодом
+        function isCode(reply) {
+            const codePattern = /```[\s\S]*```/; // Проверяем на блоки кода
+            return codePattern.test(reply);
+        }
+
+        // Функция для копирования в буфер
+        function copyToClipboard(text) {
+            navigator.clipboard.writeText(text).then(() => {
+                alert("Код скопирован в буфер обмена!");
+            }).catch(err => {
+                console.error("Ошибка при копировании текста: ", err);
+            });
         }
     </script>
 
