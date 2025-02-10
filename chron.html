@@ -3,13 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GPT-4o Бесконечно</title>
+    <title>GPT-4o Чат</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap');
-        
         body {
             font-family: 'Inter', sans-serif;
-            background-color: #0d1117;
+            background: #0d1117;
             color: white;
             display: flex;
             flex-direction: column;
@@ -45,7 +44,6 @@
             font-size: 16px;
             line-height: 1.4;
             word-wrap: break-word;
-            position: relative;
         }
         .user-message {
             background: #238636;
@@ -55,24 +53,6 @@
             background: #2f3b4b;
             align-self: flex-start;
         }
-        .typing-indicator {
-            display: inline-block;
-            width: 8px;
-            height: 8px;
-            margin: 0 2px;
-            background: white;
-            border-radius: 50%;
-            animation: blink 1.4s infinite ease-in-out;
-        }
-        .typing-indicator:nth-child(2) { animation-delay: 0.2s; }
-        .typing-indicator:nth-child(3) { animation-delay: 0.4s; }
-
-        @keyframes blink {
-            0% { opacity: 0.3; }
-            50% { opacity: 1; }
-            100% { opacity: 0.3; }
-        }
-
         .input-container {
             display: flex;
             padding: 10px;
@@ -98,10 +78,6 @@
             border-radius: 6px;
             font-size: 16px;
             cursor: pointer;
-            transition: 0.3s;
-        }
-        button:hover {
-            background: #2ea043;
         }
     </style>
 </head>
@@ -133,12 +109,12 @@
 
             let botMessage = document.createElement("div");
             botMessage.className = "message bot-message";
-            botMessage.innerHTML = '<span class="typing-indicator"></span> <span class="typing-indicator"></span> <span class="typing-indicator"></span>';
+            botMessage.innerText = "GPT-4o печатает...";
             chatBox.appendChild(botMessage);
             chatBox.scrollTop = chatBox.scrollHeight;
 
             try {
-                let response = await fetch("https://your-server.com/gpt4o", {
+                let response = await fetch("http://127.0.0.1:5000/gpt4o", {
                     method: "POST",
                     headers: {
                         "Content-Type": "application/json"
