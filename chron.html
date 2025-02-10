@@ -151,6 +151,9 @@
         const chatBox = document.getElementById('chat-box');
         const userInput = document.getElementById('user-input');
 
+        // Проверяем наличие сохраненного чата в localStorage
+        const chatHistory = JSON.parse(localStorage.getItem('chatHistory')) || [];
+
         // Функция для добавления сообщений в чат
         function addMessage(content, type, messageId) {
             const messageElement = document.createElement('div');
@@ -171,18 +174,16 @@
                 addMessage(message, 'user', Date.now()); // Добавляем сообщение пользователя
                 userInput.value = '';
 
-                // Отправляем POST-запрос на сервер
-                const response = await fetch('http://localhost:9001/chat', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({ message })
-                });
+                // Имитация отправки запроса на сервер GPT (здесь будет твой реальный API)
+                const response = await simulateGptResponse(message); // Подключи сюда функцию для реального API
 
-                // Получаем ответ от сервера и выводим его
-                const data = await response.json();
-                addMessage(data.response, 'bot', Date.now()); // Добавляем ответ от GPT-4o
+                // Добавляем ответ GPT в чат
+                addMessage(response, 'bot', Date.now()); // Добавляем ответ от GPT-4o
+
+                // Сохраняем чат в localStorage
+                chatHistory.push({ sender: 'user', content: message });
+                chatHistory.push({ sender: 'bot', content: response });
+                localStorage.setItem('chatHistory', JSON.stringify(chatHistory));
             }
         }
 
@@ -199,9 +200,25 @@
         function regenerateMessage(messageId) {
             const message = document.querySelectorAll('.message')[messageId];
             message.innerHTML = "Загрузка...";
-            // Перезапросить тот же запрос у GPT
-            sendMessage();
+            const userMessage = chatHistory[messageId - 1]; // Получаем сообщение пользователя
+            sendMessage(); // Перезапрашиваем GPT
         }
+
+        // Имитация запроса к GPT (замени на настоящий API вызов)
+        async function simulateGptResponse(message) {
+            return new Promise(resolve => {
+                setTimeout(() => {
+                    resolve(`Ответ на: "${message}"`);
+                }, 1000);
+            });
+        }
+
+        // Загрузка сохраненного чата при загрузке страницы
+        window.onload = () => {
+            chatHistory.forEach((chat, index) => {
+                addMessage(chat.content, chat.sender === 'user' ? 'user' : 'bot', index);
+            });
+        };
     </script>
 </body>
 </html>
