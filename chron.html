@@ -6,54 +6,80 @@
     <title>Chat with GPT-4o</title>
     <style>
         body {
-            font-family: Arial, sans-serif;
-            background-color: #f4f4f9;
+            font-family: 'Arial', sans-serif;
+            background-color: #f1f1f1;
             margin: 0;
             padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
         }
+
         .chat-container {
-            max-width: 600px;
-            margin: 20px auto;
-            padding: 10px;
-            background-color: white;
-            border-radius: 10px;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 400px;
+            background-color: #fff;
+            padding: 15px;
+            border-radius: 15px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            display: flex;
+            flex-direction: column;
         }
+
         .messages {
-            max-height: 400px;
+            flex: 1;
             overflow-y: auto;
-            padding: 10px;
-            margin-bottom: 20px;
+            margin-bottom: 15px;
+            padding: 5px;
+            height: 400px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
         }
+
         .message {
-            padding: 8px;
-            margin: 5px 0;
-            border-radius: 10px;
+            padding: 12px;
+            border-radius: 15px;
+            max-width: 80%;
+            word-wrap: break-word;
+            background-color: #f0f0f0;
+            margin-bottom: 5px;
         }
+
         .user-message {
-            background-color: #e0e0e0;
-            text-align: right;
+            background-color: #007bff;
+            color: white;
+            align-self: flex-end;
         }
+
         .gpt-message {
-            background-color: #b3d9ff;
+            background-color: #e0e0e0;
+            color: black;
+            align-self: flex-start;
         }
+
         input[type="text"] {
             width: 100%;
-            padding: 10px;
-            margin-top: 10px;
-            border: none;
-            border-radius: 5px;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 10px;
             box-sizing: border-box;
+            font-size: 16px;
+            margin-bottom: 10px;
         }
+
         .send-button {
-            padding: 10px 20px;
+            padding: 12px 20px;
             background-color: #007bff;
             color: white;
             border: none;
-            border-radius: 5px;
+            border-radius: 10px;
+            font-size: 16px;
             cursor: pointer;
-            margin-top: 10px;
+            transition: background-color 0.3s;
         }
+
         .send-button:hover {
             background-color: #0056b3;
         }
@@ -61,33 +87,33 @@
 </head>
 <body>
     <div class="chat-container">
-        <h2>Chat with GPT-4o</h2>
+        <h2 style="text-align: center; margin-bottom: 20px;">Chat with GPT-4o</h2>
         <div class="messages" id="messages"></div>
-        <input type="text" id="user-input" placeholder="Введите ваш вопрос" />
+        <input type="text" id="user-input" placeholder="Введите ваш вопрос..." />
         <button class="send-button" id="send-button">Отправить</button>
     </div>
 
     <script>
-        // Функция для добавления сообщений в окно чата
+        // Функция для добавления сообщений в чат
         function appendMessage(content, isUser = false) {
             const messageDiv = document.createElement('div');
             messageDiv.classList.add('message');
             messageDiv.classList.add(isUser ? 'user-message' : 'gpt-message');
             messageDiv.textContent = content;
             document.getElementById('messages').appendChild(messageDiv);
-            window.scrollTo(0, document.body.scrollHeight);
+            window.scrollTo(0, document.body.scrollHeight); // Прокрутка вниз
         }
 
         // Функция для отправки запроса на сервер
         async function sendMessageToGPT() {
             const userInput = document.getElementById('user-input').value;
-            if (!userInput) return;
+            if (!userInput.trim()) return;
 
             appendMessage(userInput, true); // Добавляем сообщение пользователя в чат
             document.getElementById('user-input').value = ''; // Очищаем поле ввода
 
             try {
-                const response = await fetch('http://127.0.0.1:9001/ask', { // Указываем адрес Flask-сервера
+                const response = await fetch('http://127.0.0.1:9001/ask', { // Адрес Flask-сервера
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -98,7 +124,7 @@
                 const data = await response.json();
 
                 if (data.message) {
-                    appendMessage(data.message); // Добавляем ответ от GPT
+                    appendMessage(data.message); // Ответ от GPT
                 } else {
                     appendMessage('Ошибка: Неверный формат ответа', false);
                 }
@@ -108,10 +134,10 @@
             }
         }
 
-        // Добавляем обработчик события для кнопки
+        // Добавляем обработчик для кнопки отправки
         document.getElementById('send-button').addEventListener('click', sendMessageToGPT);
 
-        // Добавляем обработчик события для нажатия Enter
+        // Добавляем обработчик для нажатия Enter
         document.getElementById('user-input').addEventListener('keypress', function (e) {
             if (e.key === 'Enter') {
                 sendMessageToGPT();
