@@ -1,582 +1,81 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-    <meta name="theme-color" content="#1a1b26" />
-    <meta name="description" content="Code Editor with multiple language support" />
-    <title>Code Editor</title>
-    <link rel="stylesheet" data-name="vs/editor/editor.main" href="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.36.1/min/vs/editor/editor.main.min.css" />
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/xterm@5.1.0/css/xterm.css" />
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Python Code Runner</title>
     <style>
-        /* Ваши стили остаются без изменений */
-        :root {
-            --primary-color: #1a1b26;
-            --secondary-color: #24283b;
-            --accent-color: #7aa2f7;
-            --text-color: #c0caf5;
-            --border-color: #414868;
-            --error-color: #f7768e;
-            --success-color: #9ece6a;
-        }
-
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            -webkit-tap-highlight-color: transparent;
-        }
-
         body {
-            font-family: -apple-system, system-ui, sans-serif;
-            background-color: var(--primary-color);
-            color: var(--text-color);
-            height: 100vh;
-            overflow: hidden;
+            font-family: Arial, sans-serif;
+            margin: 20px;
         }
-
-        .app-container {
-            display: flex;
-            flex-direction: column;
-            height: 100vh;
-        }
-
-        @media (min-width: 768px) {
-            .app-container {
-                flex-direction: row;
-            }
-        }
-
-        .sidebar {
-            background-color: var(--secondary-color);
-            border-bottom: 1px solid var(--border-color);
-            padding: 1rem;
-            display: flex;
-            flex-direction: column;
-            gap: 1rem;
-            height: auto;
-        }
-
-        @media (min-width: 768px) {
-            .sidebar {
-                width: 300px;
-                height: 100vh;
-                border-right: 1px solid var(--border-color);
-                border-bottom: none;
-                overflow-y: auto;
-            }
-        }
-
-        .main-content {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            height: calc(100vh - 200px);
-        }
-
-        @media (min-width: 768px) {
-            .main-content {
-                height: 100vh;
-            }
-        }
-
-        .editor-container {
-            flex: 1;
-            position: relative;
-        }
-
-        .terminal-container {
-            height: 30vh;
-            background-color: var(--secondary-color);
-            padding: 0.5rem;
-            border-top: 1px solid var(--border-color);
-        }
-
-        .toolbar {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 0.5rem;
-            padding: 0.75rem;
-            background-color: var(--secondary-color);
-            border-bottom: 1px solid var(--border-color);
-            align-items: center;
-        }
-
-        .file-section {
-            flex: 1;
-        }
-
-        .file-list {
-            list-style: none;
-            margin-top: 0.5rem;
-            overflow-y: auto;
-            max-height: calc(100vh - 300px);
-        }
-
-        .file-item {
-            padding: 0.75rem;
-            cursor: pointer;
-            border-radius: 6px;
-            margin-bottom: 0.5rem;
-            background-color: rgba(255, 255, 255, 0.05);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            transition: all 0.2s;
-            min-height: 44px;
-        }
-
-        .file-item:active {
-            transform: scale(0.98);
-        }
-
-        .file-item.active {
-            background-color: var(--accent-color);
-            color: white;
-        }
-
-        .btn {
-            background-color: var(--accent-color);
-            color: white;
-            border: none;
-            padding: 0.75rem 1rem;
-            border-radius: 6px;
-            cursor: pointer;
-            font-size: 0.875rem;
-            font-weight: 500;
-            display: inline-flex;
-            align-items: center;
-            gap: 0.5rem;
-            min-height: 44px;
-            transition: all 0.2s;
-        }
-
-        .btn:active {
-            transform: translateY(1px);
-        }
-
-        .btn[disabled] {
-            opacity: 0.6;
-            cursor: not-allowed;
-        }
-
-        .select {
-            background-color: var(--primary-color);
-            color: var(--text-color);
-            border: 1px solid var(--border-color);
-            padding: 0.75rem;
-            border-radius: 6px;
-            font-size: 0.875rem;
-            min-height: 44px;
+        textarea {
             width: 100%;
-            max-width: 200px;
+            height: 200px;
+            font-family: monospace;
         }
-
-        .package-input {
-            background-color: var(--primary-color);
-            color: var(--text-color);
-            border: 1px solid var(--border-color);
-            padding: 0.75rem;
-            border-radius: 6px;
-            width: 100%;
-            font-size: 0.875rem;
-            margin: 0.5rem 0;
-            min-height: 44px;
+        button {
+            margin: 10px 0;
+            padding: 10px 20px;
+            font-size: 16px;
         }
-
-        .notification {
-            position: fixed;
-            bottom: 1rem;
-            left: 50%;
-            transform: translateX(-50%);
-            padding: 0.75rem 1.5rem;
-            border-radius: 6px;
-            color: white;
-            font-size: 0.875rem;
-            z-index: 1000;
-            animation: slideUp 0.3s ease;
-            text-align: center;
-            min-width: 200px;
-            max-width: 90%;
-        }
-
-        @keyframes slideUp {
-            from { transform: translate(-50%, 100%); opacity: 0; }
-            to { transform: translate(-50%, 0); opacity: 1; }
-        }
-
-        .tabs {
-            display: flex;
-            background-color: var(--secondary-color);
-            padding: 0.5rem;
-            gap: 0.5rem;
-            border-bottom: 1px solid var(--border-color);
-        }
-
-        .tab {
-            padding: 0.75rem 1rem;
-            border: none;
-            background: none;
-            color: var(--text-color);
-            cursor: pointer;
-            border-radius: 6px;
-            min-height: 44px;
-            font-size: 1rem;
-        }
-
-        .tab.active {
-            background-color: var(--accent-color);
-            color: white;
-        }
-
-        .panel {
-            display: none;
-            flex-direction: column;
-            height: 100%;
-        }
-
-        .panel.active {
-            display: flex;
-        }
-
-        .package-manager {
-            padding: 1rem;
-            background-color: var(--secondary-color);
-            border-top: 1px solid var(--border-color);
-        }
-
-        @media (max-width: 480px) {
-            .btn {
-                padding: 0.6rem 0.8rem;
-                font-size: 0.8rem;
-            }
-            
-            .select, .package-input {
-                font-size: 0.8rem;
-                padding: 0.6rem;
-            }
+        .output {
+            background: #f4f4f4;
+            padding: 10px;
+            border: 1px solid #ccc;
+            white-space: pre-wrap;
         }
     </style>
 </head>
 <body>
-    <div class="app-container">
-        <div class="sidebar">
-            <div class="file-section">
-                <button class="btn" onclick="createNewFile()">New File</button>
-                <div class="file-list" id="fileList"></div>
-            </div>
-            <div class="package-manager">
-                <select class="select" id="packageManager">
-                    <option value="python">Python</option>
-                    <option value="javascript">JavaScript</option>
-                </select>
-                <input type="text" class="package-input" id="packageName" placeholder="Package name">
-                <div style="display: flex; gap: 0.5rem;">
-                    <button class="btn" style="flex: 1" onclick="installPackage()">Install</button>
-                    <button class="btn" style="flex: 1" onclick="listPackages()">List</button>
-                </div>
-            </div>
-        </div>
-
-        <div class="main-content">
-            <div class="tabs">
-                <button class="tab active" onclick="switchTab('editor')" id="editorTab">Editor</button>
-                <button class="tab" onclick="switchTab('terminal')" id="terminalTab">Terminal</button>
-            </div>
-            <div class="panel active" id="editorPanel">
-                <div class="toolbar">
-                    <select class="select" id="languageSelect" onchange="changeLanguage()">
-                        <option value="python">Python</option>
-                        <option value="javascript">JavaScript</option>
-                    </select>
-                    <button class="btn" onclick="runCode()">▶ Run</button>
-                    <button class="btn" onclick="saveFile()">💾 Save</button>
-                    <button class="btn" onclick="shareCode()">Share</button>
-                </div>
-                <div class="editor-container" id="editor"></div>
-            </div>
-            <div class="panel" id="terminalPanel">
-                <div id="terminal" style="height: 100%"></div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Monaco Editor -->
-    <script>var require = { paths: { vs: 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.36.1/min/vs' } };</script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.36.1/min/vs/loader.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.36.1/min/vs/editor/editor.main.nls.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.36.1/min/vs/editor/editor.main.js"></script>
-
-    <!-- XTerm.js -->
-    <script src="https://cdn.jsdelivr.net/npm/xterm@5.1.0/lib/xterm.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/xterm-addon-fit@0.7.0/lib/xterm-addon-fit.min.js"></script>
-
-    <!-- Pyodide (Python in the browser) -->
-    <script src="https://cdn.jsdelivr.net/pyodide/v0.21.3/full/pyodide.js"></script>
+    <h1>Python Code Runner</h1>
+    <textarea id="code" placeholder="Enter your Python code here..."></textarea>
+    <br>
+    <button onclick="runCode()">Run Code</button>
+    <button onclick="stopCode()">Stop Execution</button>
+    <br>
+    <input type="text" id="library" placeholder="Enter library name to install">
+    <button onclick="installLibrary()">Install Library</button>
+    <h2>Output:</h2>
+    <div id="output" class="output"></div>
 
     <script>
-        let editor;
-        let terminal;
-        let files = [];
-        let currentFile = null;
-        let pyodide;
-
-        // Initialize Monaco Editor
-        require(['vs/editor/editor.main'], function() {
-            editor = monaco.editor.create(document.getElementById('editor'), {
-                value: '# Welcome to Code Editor\n# Start coding!',
-                language: 'python',
-                theme: 'vs-dark',
-                automaticLayout: true,
-                minimap: { enabled: false },
-                fontSize: 16,
-                wordWrap: 'on',
-                scrollBeyondLastLine: false,
-                padding: { top: 10 }
-            });
-
-            monaco.editor.defineTheme('customTheme', {
-                base: 'vs-dark',
-                inherit: true,
-                rules: [],
-                colors: {
-                    'editor.background': '#1a1b26',
-                    'editor.foreground': '#c0caf5',
-                    'editor.lineHighlightBackground': '#2f3549',
-                    'editor.selectionBackground': '#515c7e'
-                }
-            });
-            monaco.editor.setTheme('customTheme');
-
-            window.addEventListener('resize', () => {
-                editor.layout();
-            });
-        });
-
-        // Initialize Terminal
-        terminal = new Terminal({
-            theme: {
-                background: '#24283b',
-                foreground: '#c0caf5',
-                cursor: '#c0caf5',
-                selection: '#515c7e',
-                black: '#1a1b26',
-                red: '#f7768e',
-                green: '#9ece6a',
-                yellow: '#e0af68',
-                blue: '#7aa2f7',
-                magenta: '#bb9af7',
-                cyan: '#7dcfff',
-                white: '#a9b1d6'
-            },
-            fontSize: 14,
-            fontFamily: 'Menlo, Monaco, Consolas, monospace',
-            cursorBlink: true,
-            cursorStyle: 'block',
-            lineHeight: 1.2,
-            scrollback: 1000
-        });
-
-        const fitAddon = new FitAddon.FitAddon();
-        terminal.loadAddon(fitAddon);
-        terminal.open(document.getElementById('terminal'));
-        fitAddon.fit();
-
-        window.addEventListener('resize', () => {
-            fitAddon.fit();
-        });
-
-        // Initialize Pyodide (Python in the browser)
-        async function initializePyodide() {
-            terminal.writeln('Loading Pyodide...');
-            pyodide = await loadPyodide({
-                indexURL: "https://cdn.jsdelivr.net/pyodide/v0.21.3/full/"
-            });
-            terminal.writeln('Pyodide loaded!');
-        }
-
-        initializePyodide();
-
-        // Run Python code using Pyodide
-        async function runPythonCode(code) {
-            try {
-                const result = await pyodide.runPythonAsync(code);
-                terminal.writeln(result || 'Code executed successfully.');
-            } catch (error) {
-                terminal.writeln(`Error: ${error.message}`);
-            }
-        }
-
-        // Run JavaScript code
-        function runJavaScriptCode(code) {
-            try {
-                const result = eval(code);
-                terminal.writeln(result || 'Code executed successfully.');
-            } catch (error) {
-                terminal.writeln(`Error: ${error.message}`);
-            }
-        }
-
-        // Run code based on selected language
         async function runCode() {
-            const code = editor.getValue();
-            if (!code.trim()) {
-                showNotification('No code to run', true);
-                return;
-            }
-
-            const language = document.getElementById('languageSelect').value;
-            switchTab('terminal');
-            terminal.clear();
-            terminal.writeln('Running code...\n');
-
-            if (language === 'python') {
-                await runPythonCode(code);
-            } else if (language === 'javascript') {
-                runJavaScriptCode(code);
-            } else {
-                terminal.writeln('Unsupported language.');
-            }
-        }
-
-        // File Management
-        function createNewFile() {
-            const name = prompt('Enter file name:');
-            if (!name) return;
-
-            const file = {
-                id: Date.now(),
-                name,
-                content: '',
-                language: document.getElementById('languageSelect').value
-            };
-
-            files.push(file);
-            saveFiles();
-            updateFileList();
-            selectFile(file);
-            showNotification('File created');
-        }
-
-        function updateFileList() {
-            const fileList = document.getElementById('fileList');
-            fileList.innerHTML = '';
-
-            files.forEach(file => {
-                const item = document.createElement('div');
-                item.className = `file-item ${currentFile?.id === file.id ? 'active' : ''}`;
-                item.innerHTML = `
-                    <span>${file.name}</span>
-                    <button class="btn" onclick="event.stopPropagation(); deleteFile(${file.id})">×</button>
-                `;
-                item.onclick = () => selectFile(file);
-                fileList.appendChild(item);
+            const code = document.getElementById("code").value;
+            const response = await fetch("/run", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({ code }),
             });
+            const data = await response.json();
+            document.getElementById("output").textContent = data.output;
         }
 
-        function selectFile(file) {
-            currentFile = file;
-            editor.setValue(file.content || '');
-            editor.updateOptions({ language: file.language });
-            document.getElementById('languageSelect').value = file.language;
-            updateFileList();
+        async function stopCode() {
+            const response = await fetch("/stop", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+            });
+            const data = await response.json();
+            alert(data.status);
         }
 
-        function deleteFile(id) {
-            if (!confirm('Delete this file?')) return;
-
-            files = files.filter(f => f.id !== id);
-            if (currentFile?.id === id) {
-                currentFile = null;
-                editor.setValue('');
-            }
-            saveFiles();
-            updateFileList();
-            showNotification('File deleted');
+        async function installLibrary() {
+            const library = document.getElementById("library").value;
+            const response = await fetch("/install", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({ library }),
+            });
+            const data = await response.json();
+            alert(data.message);
         }
-
-        function saveFile() {
-            if (!currentFile) {
-                showNotification('No file selected', true);
-                return;
-            }
-
-            currentFile.content = editor.getValue();
-            currentFile.language = document.getElementById('languageSelect').value;
-            saveFiles();
-            showNotification('File saved');
-        }
-
-        // Save files to localStorage
-        function saveFiles() {
-            localStorage.setItem('code-editor-files', JSON.stringify(files));
-        }
-
-        // Load files from localStorage
-        function loadFiles() {
-            const saved = localStorage.getItem('code-editor-files');
-            if (saved) {
-                files = JSON.parse(saved);
-                updateFileList();
-            }
-        }
-
-        // Share functionality
-        function shareCode() {
-            const code = editor.getValue();
-            const language = document.getElementById('languageSelect').value;
-
-            const params = new URLSearchParams();
-            params.append('code', code);
-            params.append('language', language);
-
-            const url = `${window.location.origin}${window.location.pathname}?${params.toString()}`;
-
-            navigator.clipboard.writeText(url)
-                .then(() => showNotification('Share URL copied to clipboard'))
-                .catch(() => showNotification('Failed to copy URL', true));
-        }
-
-        // Utilities
-        function showNotification(message, isError = false) {
-            const notification = document.createElement('div');
-            notification.className = 'notification';
-            notification.style.backgroundColor = isError ? 'var(--error-color)' : 'var(--success-color)';
-            notification.textContent = message;
-            document.body.appendChild(notification);
-
-            setTimeout(() => {
-                notification.style.opacity = '0';
-                setTimeout(() => notification.remove(), 300);
-            }, 3000);
-        }
-
-        function changeLanguage() {
-            const language = document.getElementById('languageSelect').value;
-            editor.updateOptions({ language });
-            if (currentFile) {
-                currentFile.language = language;
-                saveFiles();
-            }
-        }
-
-        // Initialize
-        loadFiles();
-        terminal.writeln('Welcome to Code Editor');
-        terminal.writeln('Ready to code...');
-
-        // Handle URL parameters for shared code
-        const urlParams = new URLSearchParams(window.location.search);
-        if (urlParams.has('code') && urlParams.has('language')) {
-            const code = urlParams.get('code');
-            const language = urlParams.get('language');
-            editor.setValue(code);
-            editor.updateOptions({ language });
-            document.getElementById('languageSelect').value = language;
-        }
-
-        // Mobile optimization
-        document.addEventListener('touchstart', function() {}, true);
     </script>
 </body>
 </html>
