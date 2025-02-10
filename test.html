@@ -278,3 +278,22 @@
             const language = document.getElementById('languageSelect').value;
             editor.setModel(monaco.editor.createModel(editor.getValue(), language));
         }
+
+        function showNotification(message, isError = false) {
+            const notification = document.createElement('div');
+            notification.className = 'notification';
+            notification.style.backgroundColor = isError ? 'var(--error-color)' : 'var(--success-color)';
+            notification.textContent = message;
+            document.body.appendChild(notification);
+
+            setTimeout(() => {
+                notification.remove();
+            }, 3000);
+        }
+
+        // Initialize
+        terminal.writeln('Welcome to Code Editor');
+        terminal.writeln('Ready to execute code...');
+    </script>
+</body>
+</html>
