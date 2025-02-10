@@ -3,90 +3,89 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GPT-4o Чат</title>
+    <title>GPT-4o Chat</title>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap');
         body {
-            font-family: 'Inter', sans-serif;
-            background: #0d1117;
-            color: white;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
+            font-family: Arial, sans-serif;
             margin: 0;
+            padding: 0;
+            background-color: #f4f4f9;
+        }
+        header {
+            background-color: #333;
+            color: #fff;
+            padding: 10px 20px;
+            text-align: center;
+            font-size: 1.5em;
         }
         .chat-container {
-            width: 95%;
-            max-width: 600px;
-            height: 85vh;
-            background: #161b22;
-            border-radius: 15px;
             display: flex;
             flex-direction: column;
-            overflow: hidden;
-            box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.5);
+            height: 80vh;
+            padding: 20px;
         }
         .chat-box {
             flex-grow: 1;
-            padding: 15px;
             overflow-y: auto;
-            display: flex;
-            flex-direction: column;
-            scrollbar-width: none;
-        }
-        .message {
-            padding: 12px;
-            border-radius: 12px;
+            padding: 10px;
+            background-color: #fff;
+            border: 1px solid #ddd;
+            border-radius: 10px;
             margin-bottom: 10px;
+        }
+        .chat-message {
+            margin-bottom: 15px;
+            padding: 10px;
+            border-radius: 10px;
             max-width: 80%;
-            font-size: 16px;
-            line-height: 1.4;
-            word-wrap: break-word;
         }
         .user-message {
-            background: #238636;
+            background-color: #007bff;
+            color: #fff;
             align-self: flex-end;
         }
-        .bot-message {
-            background: #2f3b4b;
+        .gpt-message {
+            background-color: #f1f1f1;
+            color: #333;
             align-self: flex-start;
         }
         .input-container {
             display: flex;
-            padding: 10px;
-            background: #0d1117;
-            border-top: 1px solid #222;
         }
-        input {
+        input[type="text"] {
             flex-grow: 1;
-            padding: 12px;
-            border: none;
-            border-radius: 6px;
-            background: #161b22;
-            color: white;
-            outline: none;
-            font-size: 16px;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 10px;
+            font-size: 1em;
         }
         button {
-            margin-left: 10px;
-            padding: 12px 16px;
-            background: #238636;
-            border: none;
+            background-color: #007bff;
             color: white;
-            border-radius: 6px;
-            font-size: 16px;
+            padding: 10px;
+            border: none;
+            border-radius: 10px;
             cursor: pointer;
+            font-size: 1em;
+            margin-left: 10px;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        .loading {
+            color: #007bff;
+            font-size: 1em;
+            font-style: italic;
         }
     </style>
 </head>
 <body>
-
+    <header>
+        GPT-4o Chat
+    </header>
+    
     <div class="chat-container">
-        <div class="chat-box" id="chatBox">
-            <div class="message bot-message">Привет! Я GPT-4o. Спроси что-нибудь.</div>
-        </div>
+        <div class="chat-box" id="chatBox"></div>
         <div class="input-container">
             <input type="text" id="userInput" placeholder="Введите сообщение...">
             <button onclick="sendMessage()">Отправить</button>
@@ -95,42 +94,62 @@
 
     <script>
         async function sendMessage() {
-            let inputField = document.getElementById("userInput");
-            let message = inputField.value.trim();
-            if (!message) return;
+            const inputElement = document.getElementById('userInput');
+            const message = inputElement.value;
+            if (message.trim() === '') return;
 
-            inputField.value = "";
-            let chatBox = document.getElementById("chatBox");
+            // Добавление сообщения пользователя в чат
+            addMessage(message, 'user');
 
-            let userMessage = document.createElement("div");
-            userMessage.className = "message user-message";
-            userMessage.innerText = message;
-            chatBox.appendChild(userMessage);
+            // Очистить поле ввода
+            inputElement.value = '';
+            document.getElementById('chatBox').scrollTop = document.getElementById('chatBox').scrollHeight;
 
-            let botMessage = document.createElement("div");
-            botMessage.className = "message bot-message";
-            botMessage.innerText = "GPT-4o печатает...";
-            chatBox.appendChild(botMessage);
-            chatBox.scrollTop = chatBox.scrollHeight;
+            // Показать сообщение о загрузке
+            addMessage("Загрузка...", 'loading');
 
             try {
-                let response = await fetch("http://127.0.0.1:9653/gpt4o", {
-                    method: "POST",
+                // Отправка запроса к серверу Flask
+                const response = await fetch('http://127.0.0.1:9001/gpt4o', {
+                    method: 'POST',
                     headers: {
-                        "Content-Type": "application/json"
+                        'Content-Type': 'application/json',
                     },
-                    body: JSON.stringify({ prompt: message })
+                    body: JSON.stringify({ prompt: message }),
                 });
 
-                let data = await response.json();
-                botMessage.innerText = data.reply;
+                const data = await response.json();
+
+                // Очистить сообщение о загрузке
+                const chatBox = document.getElementById('chatBox');
+                const loadingMessage = chatBox.querySelector('.loading');
+                if (loadingMessage) loadingMessage.remove();
+
+                // Добавить ответ от GPT-4o
+                if (data.response) {
+                    addMessage(data.response, 'gpt');
+                } else {
+                    addMessage("Произошла ошибка, попробуйте позже.", 'gpt');
+                }
             } catch (error) {
-                botMessage.innerText = "Ошибка: " + error;
+                console.error(error);
+                addMessage("Ошибка: не удалось получить ответ от GPT-4o.", 'gpt');
+            }
+        }
+
+        function addMessage(content, sender) {
+            const chatBox = document.getElementById('chatBox');
+            const messageElement = document.createElement('div');
+            messageElement.classList.add('chat-message', sender === 'user' ? 'user-message' : 'gpt-message');
+
+            if (sender === 'loading') {
+                messageElement.classList.add('loading');
             }
 
+            messageElement.textContent = content;
+            chatBox.appendChild(messageElement);
             chatBox.scrollTop = chatBox.scrollHeight;
         }
     </script>
-
 </body>
 </html>
