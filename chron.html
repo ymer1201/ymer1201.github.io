@@ -19,9 +19,9 @@
             margin: 0;
         }
         .chat-container {
-            width: 90%;
+            width: 95%;
             max-width: 600px;
-            height: 80vh;
+            height: 85vh;
             background: #161b22;
             border-radius: 15px;
             display: flex;
@@ -163,10 +163,11 @@
             try {
                 let response = await pyodide.runPythonAsync(`
                     import g4f
-                    g4f.Provider.Bing.chat_completion(
-                        model=g4f.models.gpt_4o,
+                    response = g4f.ChatCompletion.create(
+                        model="gpt-4o",
                         messages=[{"role": "user", "content": "${message}"}]
                     )
+                    response
                 `);
                 botMessage.innerText = response;
             } catch (error) {
