@@ -1,11 +1,14 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <meta name="theme-color" content="#1a1b26" />
+    <meta name="description" content="Code Editor with multiple language support" />
     <title>Code Editor</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.36.1/min/vs/editor/editor.main.min.css">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/xterm@5.1.0/css/xterm.css">
+    <link rel="stylesheet" data-name="vs/editor/editor.main" href="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.36.1/min/vs/editor/editor.main.min.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/xterm@5.1.0/css/xterm.css" />
     <style>
         :root {
             --primary-color: #1a1b26;
@@ -21,6 +24,7 @@
             margin: 0;
             padding: 0;
             box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
         }
 
         body {
@@ -33,23 +37,47 @@
 
         .app-container {
             display: flex;
+            flex-direction: column;
             height: 100vh;
         }
 
+        @media (min-width: 768px) {
+            .app-container {
+                flex-direction: row;
+            }
+        }
+
         .sidebar {
-            width: 250px;
             background-color: var(--secondary-color);
-            border-right: 1px solid var(--border-color);
+            border-bottom: 1px solid var(--border-color);
             padding: 1rem;
             display: flex;
             flex-direction: column;
             gap: 1rem;
+            height: auto;
+        }
+
+        @media (min-width: 768px) {
+            .sidebar {
+                width: 300px;
+                height: 100vh;
+                border-right: 1px solid var(--border-color);
+                border-bottom: none;
+                overflow-y: auto;
+            }
         }
 
         .main-content {
             flex: 1;
             display: flex;
             flex-direction: column;
+            height: calc(100vh - 200px);
+        }
+
+        @media (min-width: 768px) {
+            .main-content {
+                height: 100vh;
+            }
         }
 
         .editor-container {
@@ -60,107 +88,272 @@
         .terminal-container {
             height: 30vh;
             background-color: var(--secondary-color);
+            padding: 0.5rem;
             border-top: 1px solid var(--border-color);
         }
 
         .toolbar {
-            padding: 0.5rem;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            padding: 0.75rem;
             background-color: var(--secondary-color);
             border-bottom: 1px solid var(--border-color);
-            display: flex;
-            gap: 0.5rem;
             align-items: center;
+        }
+
+        .file-section {
+            flex: 1;
+        }
+
+        .file-list {
+            list-style: none;
+            margin-top: 0.5rem;
+            overflow-y: auto;
+            max-height: calc(100vh - 300px);
+        }
+
+        .file-item {
+            padding: 0.75rem;
+            cursor: pointer;
+            border-radius: 6px;
+            margin-bottom: 0.5rem;
+            background-color: rgba(255, 255, 255, 0.05);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: all 0.2s;
+            min-height: 44px;
+        }
+
+        .file-item:active {
+            transform: scale(0.98);
+        }
+
+        .file-item.active {
+            background-color: var(--accent-color);
+            color: white;
         }
 
         .btn {
             background-color: var(--accent-color);
             color: white;
             border: none;
-            padding: 0.5rem 1rem;
-            border-radius: 4px;
+            padding: 0.75rem 1rem;
+            border-radius: 6px;
             cursor: pointer;
+            font-size: 0.875rem;
+            font-weight: 500;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            min-height: 44px;
+            transition: all 0.2s;
+        }
+
+        .btn:active {
+            transform: translateY(1px);
+        }
+
+        .btn[disabled] {
+            opacity: 0.6;
+            cursor: not-allowed;
         }
 
         .select {
             background-color: var(--primary-color);
             color: var(--text-color);
             border: 1px solid var(--border-color);
-            padding: 0.5rem;
-            border-radius: 4px;
+            padding: 0.75rem;
+            border-radius: 6px;
+            font-size: 0.875rem;
+            min-height: 44px;
+            width: 100%;
+            max-width: 200px;
         }
 
         .package-input {
-            width: 100%;
             background-color: var(--primary-color);
             color: var(--text-color);
             border: 1px solid var(--border-color);
-            padding: 0.5rem;
-            border-radius: 4px;
+            padding: 0.75rem;
+            border-radius: 6px;
+            width: 100%;
+            font-size: 0.875rem;
             margin: 0.5rem 0;
+            min-height: 44px;
         }
 
         .notification {
             position: fixed;
             bottom: 1rem;
-            right: 1rem;
-            padding: 1rem;
-            border-radius: 4px;
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 0.75rem 1.5rem;
+            border-radius: 6px;
             color: white;
-            animation: slideIn 0.3s ease;
+            font-size: 0.875rem;
+            z-index: 1000;
+            animation: slideUp 0.3s ease;
+            text-align: center;
+            min-width: 200px;
+            max-width: 90%;
         }
 
-        @keyframes slideIn {
-            from { transform: translateX(100%); }
-            to { transform: translateX(0); }
+        @keyframes slideUp {
+            from { transform: translate(-50%, 100%); opacity: 0; }
+            to { transform: translate(-50%, 0); opacity: 1; }
+        }
+
+        .tabs {
+            display: flex;
+            background-color: var(--secondary-color);
+            padding: 0.5rem;
+            gap: 0.5rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .tab {
+            padding: 0.75rem 1rem;
+            border: none;
+            background: none;
+            color: var(--text-color);
+            cursor: pointer;
+            border-radius: 6px;
+            min-height: 44px;
+            font-size: 1rem;
+        }
+
+        .tab.active {
+            background-color: var(--accent-color);
+            color: white;
+        }
+
+        .panel {
+            display: none;
+            flex-direction: column;
+            height: 100%;
+        }
+
+        .panel.active {
+            display: flex;
+        }
+
+        .package-manager {
+            padding: 1rem;
+            background-color: var(--secondary-color);
+            border-top: 1px solid var(--border-color);
+        }
+
+        @media (max-width: 480px) {
+            .btn {
+                padding: 0.6rem 0.8rem;
+                font-size: 0.8rem;
+            }
+            
+            .select, .package-input {
+                font-size: 0.8rem;
+                padding: 0.6rem;
+            }
         }
     </style>
 </head>
 <body>
     <div class="app-container">
         <div class="sidebar">
-            <select class="select" id="packageManager">
-                <option value="pip">pip (Python)</option>
-                <option value="npm">npm (Node.js)</option>
-            </select>
-            <input type="text" class="package-input" id="packageName" placeholder="Package name">
-            <button class="btn" onclick="installPackage()">Install Package</button>
-            <button class="btn" onclick="listPackages()">List Packages</button>
+            <div class="file-section">
+                <button class="btn" onclick="createNewFile()">New File</button>
+                <div class="file-list" id="fileList"></div>
+            </div>
+            <div class="package-manager">
+                <select class="select" id="packageManager">
+                    <option value="pip">pip (Python)</option>
+                    <option value="npm">npm (Node.js)</option>
+                </select>
+                <input type="text" class="package-input" id="packageName" placeholder="Package name">
+                <div style="display: flex; gap: 0.5rem;">
+                    <button class="btn" style="flex: 1" onclick="installPackage()">Install</button>
+                    <button class="btn" style="flex: 1" onclick="listPackages()">List</button>
+                </div>
+            </div>
         </div>
 
         <div class="main-content">
-            <div class="toolbar">
-                <select class="select" id="languageSelect" onchange="changeLanguage()">
-                    <option value="python">Python</option>
-                    <option value="javascript">JavaScript</option>
-                    <option value="typescript">TypeScript</option>
-                    <option value="html">HTML</option>
-                    <option value="css">CSS</option>
-                </select>
-                <button class="btn" onclick="runCode()">▶ Run</button>
+            <div class="tabs">
+                <button class="tab active" onclick="switchTab('editor')" id="editorTab">Editor</button>
+                <button class="tab" onclick="switchTab('terminal')" id="terminalTab">Terminal</button>
             </div>
-            <div class="editor-container" id="editor"></div>
-            <div class="terminal-container" id="terminal"></div>
+            <div class="panel active" id="editorPanel">
+                <div class="toolbar">
+                    <select class="select" id="languageSelect" onchange="changeLanguage()">
+                        <option value="python">Python</option>
+                        <option value="javascript">JavaScript</option>
+                        <option value="typescript">TypeScript</option>
+                        <option value="html">HTML</option>
+                        <option value="css">CSS</option>
+                    </select>
+                    <button class="btn" onclick="runCode()">▶ Run</button>
+                    <button class="btn" onclick="saveFile()">💾 Save</button>
+                    <button class="btn" onclick="shareCode()">Share</button>
+                </div>
+                <div class="editor-container" id="editor"></div>
+            </div>
+            <div class="panel" id="terminalPanel">
+                <div id="terminal" style="height: 100%"></div>
+            </div>
         </div>
     </div>
 
+    <!-- Monaco Editor -->
     <script>var require = { paths: { vs: 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.36.1/min/vs' } };</script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.36.1/min/vs/loader.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.36.1/min/vs/editor/editor.main.nls.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.36.1/min/vs/editor/editor.main.js"></script>
+
+    <!-- XTerm.js -->
     <script src="https://cdn.jsdelivr.net/npm/xterm@5.1.0/lib/xterm.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/xterm-addon-fit@0.7.0/lib/xterm-addon-fit.min.js"></script>
 
     <script>
         let editor;
         let terminal;
+        let files = [];
+        let currentFile = null;
+        let currentCommand = '';
+        let installedPackages = {
+            pip: [],
+            npm: []
+        };
 
         // Initialize Monaco Editor
         require(['vs/editor/editor.main'], function() {
             editor = monaco.editor.create(document.getElementById('editor'), {
-                value: '# Write your code here',
+                value: '# Welcome to Code Editor\n# Start coding!',
                 language: 'python',
                 theme: 'vs-dark',
-                automaticLayout: true
+                automaticLayout: true,
+                minimap: { enabled: false },
+                fontSize: 16,
+                wordWrap: 'on',
+                scrollBeyondLastLine: false,
+                padding: { top: 10 }
+            });
+
+            monaco.editor.defineTheme('customTheme', {
+                base: 'vs-dark',
+                inherit: true,
+                rules: [],
+                colors: {
+                    'editor.background': '#1a1b26',
+                    'editor.foreground': '#c0caf5',
+                    'editor.lineHighlightBackground': '#2f3549',
+                    'editor.selectionBackground': '#515c7e'
+                }
+            });
+            monaco.editor.setTheme('customTheme');
+
+            window.addEventListener('resize', () => {
+                editor.layout();
             });
         });
 
@@ -168,9 +361,26 @@
         terminal = new Terminal({
             theme: {
                 background: '#24283b',
-                foreground: '#c0caf5'
-            }
+                foreground: '#c0caf5',
+                cursor: '#c0caf5',
+                selection: '#515c7e',
+                black: '#1a1b26',
+                red: '#f7768e',
+                green: '#9ece6a',
+                yellow: '#e0af68',
+                blue: '#7aa2f7',
+                magenta: '#bb9af7',
+                cyan: '#7dcfff',
+                white: '#a9b1d6'
+            },
+            fontSize: 14,
+            fontFamily: 'Menlo, Monaco, Consolas, monospace',
+            cursorBlink: true,
+            cursorStyle: 'block',
+            lineHeight: 1.2,
+            scrollback: 1000
         });
+
         const fitAddon = new FitAddon.FitAddon();
         terminal.loadAddon(fitAddon);
         terminal.open(document.getElementById('terminal'));
@@ -180,105 +390,229 @@
             fitAddon.fit();
         });
 
+        // Tab switching
+        function switchTab(tab) {
+            document.querySelectorAll('.panel').forEach(panel => {
+                panel.classList.remove('active');
+            });
+            document.querySelectorAll('.tab').forEach(t => {
+                t.classList.remove('active');
+            });
+
+            document.getElementById(`${tab}Panel`).classList.add('active');
+            document.getElementById(`${tab}Tab`).classList.add('active');
+
+            if (tab === 'editor' && editor) {
+                editor.layout();
+            } else if (tab === 'terminal' && fitAddon) {
+                fitAddon.fit();
+            }
+        }
+
+        // File Management
+        function createNewFile() {
+            const name = prompt('Enter file name:');
+            if (!name) return;
+
+            const file = {
+                id: Date.now(),
+                name,
+                content: '',
+                language: document.getElementById('languageSelect').value
+            };
+
+            files.push(file);
+            saveFiles();
+            updateFileList();
+            selectFile(file);
+            showNotification('File created');
+        }
+
+        function updateFileList() {
+            const fileList = document.getElementById('fileList');
+            fileList.innerHTML = '';
+
+            files.forEach(file => {
+                const item = document.createElement('div');
+                item.className = `file-item ${currentFile?.id === file.id ? 'active' : ''}`;
+                item.innerHTML = `
+                    <span>${file.name}</span>
+                    <button class="btn" onclick="event.stopPropagation(); deleteFile(${file.id})">×</button>
+                `;
+                item.onclick = () => selectFile(file);
+                fileList.appendChild(item);
+            });
+        }
+
+        function selectFile(file) {
+            currentFile = file;
+            editor.setValue(file.content || '');
+            editor.updateOptions({ language: file.language });
+            document.getElementById('languageSelect').value = file.language;
+            updateFileList();
+        }
+
+        function deleteFile(id) {
+            if (!confirm('Delete this file?')) return;
+
+            files = files.filter(f => f.id !== id);
+            if (currentFile?.id === id) {
+                currentFile = null;
+                editor.setValue('');
+            }
+            saveFiles();
+            updateFileList();
+            showNotification('File deleted');
+        }
+
+        function saveFile() {
+            if (!currentFile) {
+                showNotification('No file selected', true);
+                return;
+            }
+
+            currentFile.content = editor.getValue();
+            currentFile.language = document.getElementById('languageSelect').value;
+            saveFiles();
+            showNotification('File saved');
+        }
+
         // Code Execution
         async function runCode() {
             const code = editor.getValue();
-            const language = document.getElementById('languageSelect').value;
+            if (!code.trim()) {
+                showNotification('No code to run', true);
+                return;
+            }
 
+            const language = document.getElementById('languageSelect').value;
+            switchTab('terminal');
             terminal.clear();
             terminal.writeln('Running code...\n');
 
             try {
                 const response = await fetch('/api/code/execute', {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
                     body: JSON.stringify({ code, language })
                 });
 
                 const data = await response.json();
 
                 if (response.ok) {
-                    terminal.writeln(data.output || 'Program executed successfully');
+                    terminal.writeln(data.output || 'Program executed successfully with no output.');
                 } else {
                     terminal.writeln('Error:');
                     terminal.writeln(data.error || 'An unknown error occurred');
                 }
             } catch (error) {
-                terminal.writeln('Error: ' + error.message);
+                terminal.writeln('Error:');
+                terminal.writeln(error.message);
             }
         }
 
         // Package Management
-        async function installPackage() {
-            const packageName = document.getElementById('packageName').value.trim();
-            const manager = document.getElementById('packageManager').value;
-
-            if (!packageName) {
-                showNotification('Please enter a package name', true);
-                return;
-            }
-
-            terminal.clear();
-            terminal.writeln(`Installing ${packageName}...`);
-
+        async function executePackageCommand(command) {
             try {
                 const response = await fetch('/api/package/execute', {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        command: manager === 'pip' ? `pip install ${packageName}` : `npm install ${packageName}`
-                    })
-                });
-
-                const data = await response.json();
-
-                if (response.ok) {
-                    terminal.writeln(data.output || 'Package installed successfully');
-                    showNotification(`Package ${packageName} installed successfully`);
-                    document.getElementById('packageName').value = '';
-                } else {
-                    terminal.writeln('Error:');
-                    terminal.writeln(data.error || 'An unknown error occurred');
-                    showNotification('Failed to install package', true);
-                }
-            } catch (error) {
-                terminal.writeln('Error: ' + error.message);
-                showNotification('Failed to install package', true);
-            }
-        }
-
-        async function listPackages() {
-            const manager = document.getElementById('packageManager').value;
-            const command = manager === 'pip' ? 'pip list' : 'npm list';
-
-            terminal.clear();
-            terminal.writeln('Fetching installed packages...');
-
-            try {
-                const response = await fetch('/api/package/execute', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
                     body: JSON.stringify({ command })
                 });
 
                 const data = await response.json();
 
                 if (response.ok) {
-                    terminal.writeln(data.output || 'No packages installed');
+                    terminal.writeln(data.output || 'Command executed successfully');
                 } else {
                     terminal.writeln('Error:');
                     terminal.writeln(data.error || 'An unknown error occurred');
                 }
             } catch (error) {
-                terminal.writeln('Error: ' + error.message);
+                terminal.writeln('Error:');
+                terminal.writeln(error.message);
             }
         }
 
-        function changeLanguage() {
-            const language = document.getElementById('languageSelect').value;
-            editor.setModel(monaco.editor.createModel(editor.getValue(), language));
+        async function installPackage() {
+            const packageName = document.getElementById('packageName').value.trim();
+            if (!packageName) {
+                showNotification('Enter package name', true);
+                return;
+            }
+
+            const manager = document.getElementById('packageManager').value;
+            const command = manager === 'pip' ? `pip install ${packageName}` : `npm install ${packageName}`;
+
+            switchTab('terminal');
+            terminal.clear();
+            terminal.writeln(`Installing ${packageName}...`);
+
+            await executePackageCommand(command);
+
+            if (!installedPackages[manager].includes(packageName)) {
+                installedPackages[manager].push(packageName);
+                savePackages();
+            }
+            document.getElementById('packageName').value = '';
         }
 
+        async function listPackages() {
+            const manager = document.getElementById('packageManager').value;
+            const command = manager === 'pip' ? 'pip list' : 'npm list';
+
+            switchTab('terminal');
+            terminal.clear();
+            terminal.writeln('Installed packages:');
+
+            await executePackageCommand(command);
+        }
+
+        // Storage Management
+        function saveFiles() {
+            localStorage.setItem('code-editor-files', JSON.stringify(files));
+        }
+
+        function loadFiles() {
+            const saved = localStorage.getItem('code-editor-files');
+            if (saved) {
+                files = JSON.parse(saved);
+                updateFileList();
+            }
+        }
+
+        function savePackages() {
+            localStorage.setItem('installed-packages', JSON.stringify(installedPackages));
+        }
+
+        function loadPackages() {
+            const saved = localStorage.getItem('installed-packages');
+            if (saved) {
+                installedPackages = JSON.parse(saved);
+            }
+        }
+
+        // Share functionality
+        function shareCode() {
+            const code = editor.getValue();
+            const language = document.getElementById('languageSelect').value;
+
+            const params = new URLSearchParams();
+            params.append('code', code);
+            params.append('language', language);
+
+            const url = `${window.location.origin}${window.location.pathname}?${params.toString()}`;
+
+            navigator.clipboard.writeText(url)
+                .then(() => showNotification('Share URL copied to clipboard'))
+                .catch(() => showNotification('Failed to copy URL', true));
+        }
+
+        // Utilities
         function showNotification(message, isError = false) {
             const notification = document.createElement('div');
             notification.className = 'notification';
@@ -287,13 +621,62 @@
             document.body.appendChild(notification);
 
             setTimeout(() => {
-                notification.remove();
+                notification.style.opacity = '0';
+                setTimeout(() => notification.remove(), 300);
             }, 3000);
         }
 
+        function changeLanguage() {
+            const language = document.getElementById('languageSelect').value;
+            editor.updateOptions({ language });
+            if (currentFile) {
+                currentFile.language = language;
+                saveFiles();
+            }
+        }
+
+        // Terminal Input Handling
+        terminal.onData(data => {
+            if (data === '\r') { // Enter key
+                terminal.write('\r\n');
+                const command = currentCommand.trim();
+                if (command) {
+                    if (command.startsWith('pip ') || command.startsWith('npm ')) {
+                        executePackageCommand(command);
+                    } else {
+                        terminal.writeln(`Command: ${command}`);
+                    }
+                }
+                currentCommand = '';
+            } else if (data === '\u007f') { // Backspace
+                if (currentCommand.length > 0) {
+                    currentCommand = currentCommand.slice(0, -1);
+                    terminal.write('\b \b');
+                }
+            } else {
+                currentCommand += data;
+                terminal.write(data);
+            }
+        });
+
         // Initialize
+        loadFiles();
+        loadPackages();
         terminal.writeln('Welcome to Code Editor');
-        terminal.writeln('Ready to execute code...');
+        terminal.writeln('Ready to code...');
+
+        // Handle URL parameters for shared code
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.has('code') && urlParams.has('language')) {
+            const code = urlParams.get('code');
+            const language = urlParams.get('language');
+            editor.setValue(code);
+            editor.updateOptions({ language });
+            document.getElementById('languageSelect').value = language;
+        }
+
+        // Mobile optimization
+        document.addEventListener('touchstart', function() {}, true);
     </script>
 </body>
 </html>
