@@ -60,51 +60,63 @@
     </style>
 </head>
 <body>
+    <div class="chat-container">
+        <h2>Chat with GPT-4o</h2>
+        <div class="messages" id="messages"></div>
+        <input type="text" id="user-input" placeholder="Введите ваш вопрос" />
+        <button class="send-button" id="send-button">Отправить</button>
+    </div>
 
-<div class="chat-container">
-    <div class="messages" id="messages"></div>
-    <input type="text" id="userInput" placeholder="Введите сообщение..." />
-    <button class="send-button" onclick="sendMessage()">Отправить</button>
-</div>
+    <script>
+        // Функция для добавления сообщений в окно чата
+        function appendMessage(content, isUser = false) {
+            const messageDiv = document.createElement('div');
+            messageDiv.classList.add('message');
+            messageDiv.classList.add(isUser ? 'user-message' : 'gpt-message');
+            messageDiv.textContent = content;
+            document.getElementById('messages').appendChild(messageDiv);
+            window.scrollTo(0, document.body.scrollHeight);
+        }
 
-<script>
-    function addMessage(content, sender) {
-        const messageContainer = document.createElement('div');
-        messageContainer.classList.add('message');
-        messageContainer.classList.add(sender === 'user' ? 'user-message' : 'gpt-message');
-        messageContainer.textContent = content;
-        document.getElementById('messages').appendChild(messageContainer);
-        document.getElementById('messages').scrollTop = document.getElementById('messages').scrollHeight;
-    }
+        // Функция для отправки запроса на сервер
+        async function sendMessageToGPT() {
+            const userInput = document.getElementById('user-input').value;
+            if (!userInput) return;
 
-    function sendMessage() {
-        const userInput = document.getElementById('userInput').value;
-        if (userInput.trim() === '') return;
+            appendMessage(userInput, true); // Добавляем сообщение пользователя в чат
+            document.getElementById('user-input').value = ''; // Очищаем поле ввода
 
-        addMessage(userInput, 'user');
-        document.getElementById('userInput').value = '';  // Очистить поле ввода
+            try {
+                const response = await fetch('http://127.0.0.1:9001/ask', { // Указываем адрес Flask-сервера
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ message: userInput }),
+                });
 
-        fetch("http://localhost:9001/ask", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify({ message: userInput })
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.message) {
-                addMessage(data.message, 'gpt');
-            } else {
-                addMessage("Ошибка: " + (data.error || "Неизвестная ошибка"), 'gpt');
+                const data = await response.json();
+
+                if (data.message) {
+                    appendMessage(data.message); // Добавляем ответ от GPT
+                } else {
+                    appendMessage('Ошибка: Неверный формат ответа', false);
+                }
+
+            } catch (error) {
+                appendMessage('Произошла ошибка: ' + error.message, false);
             }
-        })
-        .catch(error => {
-            console.error("Ошибка при запросе:", error);
-            addMessage("Ошибка подключения. Попробуйте позже.", 'gpt');
-        });
-    }
-</script>
+        }
 
+        // Добавляем обработчик события для кнопки
+        document.getElementById('send-button').addEventListener('click', sendMessageToGPT);
+
+        // Добавляем обработчик события для нажатия Enter
+        document.getElementById('user-input').addEventListener('keypress', function (e) {
+            if (e.key === 'Enter') {
+                sendMessageToGPT();
+            }
+        });
+    </script>
 </body>
 </html>
