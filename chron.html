@@ -117,25 +117,7 @@
         </div>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/pyodide/v0.23.4/full/pyodide.js"></script>
     <script>
-        let pyodideReady = false;
-
-        async function loadPyodideAndPackages() {
-            try {
-                window.pyodide = await loadPyodide();
-                await pyodide.loadPackage("micropip");
-                await pyodide.runPythonAsync(`
-                    import micropip
-                    await micropip.install("g4f")
-                `);
-                pyodideReady = true;
-            } catch (error) {
-                console.error("Ошибка загрузки Pyodide:", error);
-            }
-        }
-        loadPyodideAndPackages();
-
         async function sendMessage() {
             let inputField = document.getElementById("userInput");
             let message = inputField.value.trim();
@@ -155,21 +137,17 @@
             chatBox.appendChild(botMessage);
             chatBox.scrollTop = chatBox.scrollHeight;
 
-            if (!pyodideReady) {
-                botMessage.innerText = "Pyodide ещё загружается... Подождите!";
-                return;
-            }
-
             try {
-                let response = await pyodide.runPythonAsync(`
-                    import g4f
-                    response = g4f.ChatCompletion.create(
-                        model="gpt-4o",
-                        messages=[{"role": "user", "content": "${message}"}]
-                    )
-                    response
-                `);
-                botMessage.innerText = response;
+                let response = await fetch("https://your-server.com/gpt4o", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({ prompt: message })
+                });
+
+                let data = await response.json();
+                botMessage.innerText = data.reply;
             } catch (error) {
                 botMessage.innerText = "Ошибка: " + error;
             }
