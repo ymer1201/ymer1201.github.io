@@ -3,146 +3,175 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Chat with GPT-4o</title>
+    <title>GPT Chat</title>
     <style>
         body {
-            font-family: 'Arial', sans-serif;
-            background-color: #f1f1f1;
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f9;
             margin: 0;
             padding: 0;
             display: flex;
             justify-content: center;
             align-items: center;
             height: 100vh;
+            flex-direction: column;
         }
-
         .chat-container {
             width: 100%;
-            max-width: 400px;
-            background-color: #fff;
-            padding: 15px;
-            border-radius: 15px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-            display: flex;
-            flex-direction: column;
-        }
-
-        .messages {
-            flex: 1;
-            overflow-y: auto;
-            margin-bottom: 15px;
-            padding: 5px;
-            height: 400px;
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-        }
-
-        .message {
-            padding: 12px;
-            border-radius: 15px;
-            max-width: 80%;
-            word-wrap: break-word;
-            background-color: #f0f0f0;
-            margin-bottom: 5px;
-        }
-
-        .user-message {
-            background-color: #007bff;
-            color: white;
-            align-self: flex-end;
-        }
-
-        .gpt-message {
-            background-color: #e0e0e0;
-            color: black;
-            align-self: flex-start;
-        }
-
-        input[type="text"] {
-            width: 100%;
-            padding: 12px;
-            border: 1px solid #ddd;
+            max-width: 500px;
+            background-color: white;
             border-radius: 10px;
-            box-sizing: border-box;
-            font-size: 16px;
-            margin-bottom: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
         }
-
-        .send-button {
-            padding: 12px 20px;
-            background-color: #007bff;
+        .messages {
+            padding: 15px;
+            max-height: 60vh;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column-reverse;
+        }
+        .input-container {
+            padding: 10px;
+            background-color: #fff;
+            display: flex;
+        }
+        input[type="text"] {
+            width: 80%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        button {
+            padding: 10px;
+            background-color: #4CAF50;
             color: white;
             border: none;
-            border-radius: 10px;
-            font-size: 16px;
+            border-radius: 5px;
             cursor: pointer;
-            transition: background-color 0.3s;
+            margin-left: 10px;
         }
-
-        .send-button:hover {
-            background-color: #0056b3;
+        .message {
+            margin: 10px;
+            padding: 10px;
+            border-radius: 10px;
+            background-color: #e0e0e0;
+            max-width: 80%;
+            word-wrap: break-word;
+        }
+        .user {
+            align-self: flex-end;
+            background-color: #4CAF50;
+            color: white;
+        }
+        .gpt {
+            align-self: flex-start;
+            background-color: #f1f1f1;
+        }
+        .message-actions {
+            margin-top: 10px;
+            display: flex;
+            gap: 10px;
+        }
+        .copy-btn, .regenerate-btn {
+            padding: 5px;
+            background-color: #2196F3;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .copy-btn:hover, .regenerate-btn:hover {
+            background-color: #1976D2;
         }
     </style>
 </head>
 <body>
+
     <div class="chat-container">
-        <h2 style="text-align: center; margin-bottom: 20px;">Chat with GPT-4o</h2>
         <div class="messages" id="messages"></div>
-        <input type="text" id="user-input" placeholder="Введите ваш вопрос..." />
-        <button class="send-button" id="send-button">Отправить</button>
+        <div class="input-container">
+            <input type="text" id="user-input" placeholder="Введите ваше сообщение...">
+            <button onclick="sendMessage()">Отправить</button>
+        </div>
     </div>
 
     <script>
-        // Функция для добавления сообщений в чат
-        function appendMessage(content, isUser = false) {
-            const messageDiv = document.createElement('div');
-            messageDiv.classList.add('message');
-            messageDiv.classList.add(isUser ? 'user-message' : 'gpt-message');
-            messageDiv.textContent = content;
-            document.getElementById('messages').appendChild(messageDiv);
-            window.scrollTo(0, document.body.scrollHeight); // Прокрутка вниз
-        }
+        const messagesContainer = document.getElementById('messages');
+        const userInput = document.getElementById('user-input');
 
-        // Функция для отправки запроса на сервер
-        async function sendMessageToGPT() {
-            const userInput = document.getElementById('user-input').value;
-            if (!userInput.trim()) return;
+        function sendMessage() {
+            const message = userInput.value;
+            if (message.trim() === '') return;
 
-            appendMessage(userInput, true); // Добавляем сообщение пользователя в чат
-            document.getElementById('user-input').value = ''; // Очищаем поле ввода
+            // Display user message
+            appendMessage(message, 'user');
+            userInput.value = '';
 
-            try {
-                const response = await fetch('http://127.0.0.1:9001/ask', { // Адрес Flask-сервера
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({ message: userInput }),
-                });
-
-                const data = await response.json();
-
+            // Send to Flask server (your backend)
+            fetch('http://127.0.0.1:9001/ask', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ message })
+            })
+            .then(response => response.json())
+            .then(data => {
                 if (data.message) {
-                    appendMessage(data.message); // Ответ от GPT
+                    appendMessage(data.message, 'gpt');
                 } else {
-                    appendMessage('Ошибка: Неверный формат ответа', false);
+                    appendMessage("Ошибка: Не удалось получить ответ.", 'gpt');
                 }
-
-            } catch (error) {
-                appendMessage('Произошла ошибка: ' + error.message, false);
-            }
+            })
+            .catch(error => {
+                appendMessage("Ошибка: Не удалось подключиться к серверу.", 'gpt');
+            });
         }
 
-        // Добавляем обработчик для кнопки отправки
-        document.getElementById('send-button').addEventListener('click', sendMessageToGPT);
+        function appendMessage(content, sender) {
+            const messageElement = document.createElement('div');
+            messageElement.classList.add('message', sender);
 
-        // Добавляем обработчик для нажатия Enter
-        document.getElementById('user-input').addEventListener('keypress', function (e) {
-            if (e.key === 'Enter') {
-                sendMessageToGPT();
+            const messageContent = document.createElement('div');
+            messageContent.textContent = content;
+            messageElement.appendChild(messageContent);
+
+            const actionsContainer = document.createElement('div');
+            actionsContainer.classList.add('message-actions');
+
+            if (sender === 'gpt') {
+                const copyButton = document.createElement('button');
+                copyButton.textContent = 'Копировать';
+                copyButton.classList.add('copy-btn');
+                copyButton.onclick = () => copyToClipboard(content);
+                actionsContainer.appendChild(copyButton);
+
+                const regenerateButton = document.createElement('button');
+                regenerateButton.textContent = 'Пересоздать';
+                regenerateButton.classList.add('regenerate-btn');
+                regenerateButton.onclick = () => regenerateMessage(messageElement);
+                actionsContainer.appendChild(regenerateButton);
             }
-        });
+
+            messageElement.appendChild(actionsContainer);
+            messagesContainer.appendChild(messageElement);
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        }
+
+        function copyToClipboard(content) {
+            navigator.clipboard.writeText(content).then(() => {
+                alert('Сообщение скопировано!');
+            }).catch(err => {
+                alert('Ошибка копирования!');
+            });
+        }
+
+        function regenerateMessage(messageElement) {
+            messageElement.innerHTML = '';
+            sendMessage();
+        }
     </script>
+
 </body>
 </html>
