@@ -5,9 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>GPT-4o Бесконечно</title>
     <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap');
+        
         body {
-            font-family: Arial, sans-serif;
-            background-color: #1e1e2e;
+            font-family: 'Inter', sans-serif;
+            background-color: #0d1117;
             color: white;
             display: flex;
             flex-direction: column;
@@ -20,11 +22,12 @@
             width: 90%;
             max-width: 600px;
             height: 80vh;
-            background: #2a2a3b;
+            background: #161b22;
             border-radius: 15px;
             display: flex;
             flex-direction: column;
             overflow: hidden;
+            box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.5);
         }
         .chat-box {
             flex-grow: 1;
@@ -32,41 +35,73 @@
             overflow-y: auto;
             display: flex;
             flex-direction: column;
+            scrollbar-width: none;
         }
         .message {
-            padding: 10px;
-            border-radius: 10px;
+            padding: 12px;
+            border-radius: 12px;
             margin-bottom: 10px;
             max-width: 80%;
+            font-size: 16px;
+            line-height: 1.4;
+            word-wrap: break-word;
+            position: relative;
         }
         .user-message {
-            background: #4c4c66;
+            background: #238636;
             align-self: flex-end;
         }
         .bot-message {
-            background: #3c3c56;
+            background: #2f3b4b;
             align-self: flex-start;
         }
+        .typing-indicator {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            margin: 0 2px;
+            background: white;
+            border-radius: 50%;
+            animation: blink 1.4s infinite ease-in-out;
+        }
+        .typing-indicator:nth-child(2) { animation-delay: 0.2s; }
+        .typing-indicator:nth-child(3) { animation-delay: 0.4s; }
+
+        @keyframes blink {
+            0% { opacity: 0.3; }
+            50% { opacity: 1; }
+            100% { opacity: 0.3; }
+        }
+
         .input-container {
             display: flex;
             padding: 10px;
-            background: #1e1e2e;
+            background: #0d1117;
+            border-top: 1px solid #222;
         }
         input {
             flex-grow: 1;
-            padding: 10px;
+            padding: 12px;
             border: none;
-            border-radius: 5px;
+            border-radius: 6px;
+            background: #161b22;
+            color: white;
             outline: none;
+            font-size: 16px;
         }
         button {
             margin-left: 10px;
-            padding: 10px;
-            background: #007bff;
+            padding: 12px 16px;
+            background: #238636;
             border: none;
             color: white;
-            border-radius: 5px;
+            border-radius: 6px;
+            font-size: 16px;
             cursor: pointer;
+            transition: 0.3s;
+        }
+        button:hover {
+            background: #2ea043;
         }
     </style>
 </head>
@@ -74,7 +109,7 @@
 
     <div class="chat-container">
         <div class="chat-box" id="chatBox">
-            <div class="message bot-message">Привет! Я GPT-4o. Задавай вопросы.</div>
+            <div class="message bot-message">Привет! Я GPT-4o. Спроси что-нибудь.</div>
         </div>
         <div class="input-container">
             <input type="text" id="userInput" placeholder="Введите сообщение...">
@@ -85,14 +120,19 @@
     <script src="https://cdn.jsdelivr.net/pyodide/v0.23.4/full/pyodide.js"></script>
     <script>
         let pyodideReady = false;
+
         async function loadPyodideAndPackages() {
-            window.pyodide = await loadPyodide();
-            await pyodide.loadPackage("micropip");
-            await pyodide.runPythonAsync(`
-                import micropip
-                await micropip.install("g4f")
-            `);
-            pyodideReady = true;
+            try {
+                window.pyodide = await loadPyodide();
+                await pyodide.loadPackage("micropip");
+                await pyodide.runPythonAsync(`
+                    import micropip
+                    await micropip.install("g4f")
+                `);
+                pyodideReady = true;
+            } catch (error) {
+                console.error("Ошибка загрузки Pyodide:", error);
+            }
         }
         loadPyodideAndPackages();
 
@@ -109,20 +149,16 @@
             userMessage.innerText = message;
             chatBox.appendChild(userMessage);
 
-            if (!pyodideReady) {
-                let errorMessage = document.createElement("div");
-                errorMessage.className = "message bot-message";
-                errorMessage.innerText = "Загрузка Pyodide... Подождите!";
-                chatBox.appendChild(errorMessage);
-                chatBox.scrollTop = chatBox.scrollHeight;
-                return;
-            }
-
             let botMessage = document.createElement("div");
             botMessage.className = "message bot-message";
-            botMessage.innerText = "GPT думает...";
+            botMessage.innerHTML = '<span class="typing-indicator"></span> <span class="typing-indicator"></span> <span class="typing-indicator"></span>';
             chatBox.appendChild(botMessage);
             chatBox.scrollTop = chatBox.scrollHeight;
+
+            if (!pyodideReady) {
+                botMessage.innerText = "Pyodide ещё загружается... Подождите!";
+                return;
+            }
 
             try {
                 let response = await pyodide.runPythonAsync(`
