@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -10,6 +9,7 @@
     <link rel="stylesheet" data-name="vs/editor/editor.main" href="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.36.1/min/vs/editor/editor.main.min.css" />
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/xterm@5.1.0/css/xterm.css" />
     <style>
+        /* Ваши стили остаются без изменений */
         :root {
             --primary-color: #1a1b26;
             --secondary-color: #24283b;
@@ -267,8 +267,8 @@
             </div>
             <div class="package-manager">
                 <select class="select" id="packageManager">
-                    <option value="pip">pip (Python)</option>
-                    <option value="npm">npm (Node.js)</option>
+                    <option value="python">Python</option>
+                    <option value="javascript">JavaScript</option>
                 </select>
                 <input type="text" class="package-input" id="packageName" placeholder="Package name">
                 <div style="display: flex; gap: 0.5rem;">
@@ -288,9 +288,6 @@
                     <select class="select" id="languageSelect" onchange="changeLanguage()">
                         <option value="python">Python</option>
                         <option value="javascript">JavaScript</option>
-                        <option value="typescript">TypeScript</option>
-                        <option value="html">HTML</option>
-                        <option value="css">CSS</option>
                     </select>
                     <button class="btn" onclick="runCode()">▶ Run</button>
                     <button class="btn" onclick="saveFile()">💾 Save</button>
@@ -314,16 +311,15 @@
     <script src="https://cdn.jsdelivr.net/npm/xterm@5.1.0/lib/xterm.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/xterm-addon-fit@0.7.0/lib/xterm-addon-fit.min.js"></script>
 
+    <!-- Pyodide (Python in the browser) -->
+    <script src="https://cdn.jsdelivr.net/pyodide/v0.21.3/full/pyodide.js"></script>
+
     <script>
         let editor;
         let terminal;
         let files = [];
         let currentFile = null;
-        let currentCommand = '';
-        let installedPackages = {
-            pip: [],
-            npm: []
-        };
+        let pyodide;
 
         // Initialize Monaco Editor
         require(['vs/editor/editor.main'], function() {
@@ -390,22 +386,56 @@
             fitAddon.fit();
         });
 
-        // Tab switching
-        function switchTab(tab) {
-            document.querySelectorAll('.panel').forEach(panel => {
-                panel.classList.remove('active');
+        // Initialize Pyodide (Python in the browser)
+        async function initializePyodide() {
+            terminal.writeln('Loading Pyodide...');
+            pyodide = await loadPyodide({
+                indexURL: "https://cdn.jsdelivr.net/pyodide/v0.21.3/full/"
             });
-            document.querySelectorAll('.tab').forEach(t => {
-                t.classList.remove('active');
-            });
+            terminal.writeln('Pyodide loaded!');
+        }
 
-            document.getElementById(`${tab}Panel`).classList.add('active');
-            document.getElementById(`${tab}Tab`).classList.add('active');
+        initializePyodide();
 
-            if (tab === 'editor' && editor) {
-                editor.layout();
-            } else if (tab === 'terminal' && fitAddon) {
-                fitAddon.fit();
+        // Run Python code using Pyodide
+        async function runPythonCode(code) {
+            try {
+                const result = await pyodide.runPythonAsync(code);
+                terminal.writeln(result || 'Code executed successfully.');
+            } catch (error) {
+                terminal.writeln(`Error: ${error.message}`);
+            }
+        }
+
+        // Run JavaScript code
+        function runJavaScriptCode(code) {
+            try {
+                const result = eval(code);
+                terminal.writeln(result || 'Code executed successfully.');
+            } catch (error) {
+                terminal.writeln(`Error: ${error.message}`);
+            }
+        }
+
+        // Run code based on selected language
+        async function runCode() {
+            const code = editor.getValue();
+            if (!code.trim()) {
+                showNotification('No code to run', true);
+                return;
+            }
+
+            const language = document.getElementById('languageSelect').value;
+            switchTab('terminal');
+            terminal.clear();
+            terminal.writeln('Running code...\n');
+
+            if (language === 'python') {
+                await runPythonCode(code);
+            } else if (language === 'javascript') {
+                runJavaScriptCode(code);
+            } else {
+                terminal.writeln('Unsupported language.');
             }
         }
 
@@ -477,122 +507,17 @@
             showNotification('File saved');
         }
 
-        // Code Execution
-        async function runCode() {
-            const code = editor.getValue();
-            if (!code.trim()) {
-                showNotification('No code to run', true);
-                return;
-            }
-
-            const language = document.getElementById('languageSelect').value;
-            switchTab('terminal');
-            terminal.clear();
-            terminal.writeln('Running code...\n');
-
-            try {
-                const response = await fetch('/api/code/execute', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({ code, language })
-                });
-
-                const data = await response.json();
-
-                if (response.ok) {
-                    terminal.writeln(data.output || 'Program executed successfully with no output.');
-                } else {
-                    terminal.writeln('Error:');
-                    terminal.writeln(data.error || 'An unknown error occurred');
-                }
-            } catch (error) {
-                terminal.writeln('Error:');
-                terminal.writeln(error.message);
-            }
-        }
-
-        // Package Management
-        async function executePackageCommand(command) {
-            try {
-                const response = await fetch('/api/package/execute', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({ command })
-                });
-
-                const data = await response.json();
-
-                if (response.ok) {
-                    terminal.writeln(data.output || 'Command executed successfully');
-                } else {
-                    terminal.writeln('Error:');
-                    terminal.writeln(data.error || 'An unknown error occurred');
-                }
-            } catch (error) {
-                terminal.writeln('Error:');
-                terminal.writeln(error.message);
-            }
-        }
-
-        async function installPackage() {
-            const packageName = document.getElementById('packageName').value.trim();
-            if (!packageName) {
-                showNotification('Enter package name', true);
-                return;
-            }
-
-            const manager = document.getElementById('packageManager').value;
-            const command = manager === 'pip' ? `pip install ${packageName}` : `npm install ${packageName}`;
-
-            switchTab('terminal');
-            terminal.clear();
-            terminal.writeln(`Installing ${packageName}...`);
-
-            await executePackageCommand(command);
-
-            if (!installedPackages[manager].includes(packageName)) {
-                installedPackages[manager].push(packageName);
-                savePackages();
-            }
-            document.getElementById('packageName').value = '';
-        }
-
-        async function listPackages() {
-            const manager = document.getElementById('packageManager').value;
-            const command = manager === 'pip' ? 'pip list' : 'npm list';
-
-            switchTab('terminal');
-            terminal.clear();
-            terminal.writeln('Installed packages:');
-
-            await executePackageCommand(command);
-        }
-
-        // Storage Management
+        // Save files to localStorage
         function saveFiles() {
             localStorage.setItem('code-editor-files', JSON.stringify(files));
         }
 
+        // Load files from localStorage
         function loadFiles() {
             const saved = localStorage.getItem('code-editor-files');
             if (saved) {
                 files = JSON.parse(saved);
                 updateFileList();
-            }
-        }
-
-        function savePackages() {
-            localStorage.setItem('installed-packages', JSON.stringify(installedPackages));
-        }
-
-        function loadPackages() {
-            const saved = localStorage.getItem('installed-packages');
-            if (saved) {
-                installedPackages = JSON.parse(saved);
             }
         }
 
@@ -635,33 +560,8 @@
             }
         }
 
-        // Terminal Input Handling
-        terminal.onData(data => {
-            if (data === '\r') { // Enter key
-                terminal.write('\r\n');
-                const command = currentCommand.trim();
-                if (command) {
-                    if (command.startsWith('pip ') || command.startsWith('npm ')) {
-                        executePackageCommand(command);
-                    } else {
-                        terminal.writeln(`Command: ${command}`);
-                    }
-                }
-                currentCommand = '';
-            } else if (data === '\u007f') { // Backspace
-                if (currentCommand.length > 0) {
-                    currentCommand = currentCommand.slice(0, -1);
-                    terminal.write('\b \b');
-                }
-            } else {
-                currentCommand += data;
-                terminal.write(data);
-            }
-        });
-
         // Initialize
         loadFiles();
-        loadPackages();
         terminal.writeln('Welcome to Code Editor');
         terminal.writeln('Ready to code...');
 
