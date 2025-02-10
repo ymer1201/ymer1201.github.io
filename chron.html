@@ -6,10 +6,10 @@
     <title>Чат с GPT-4o</title>
     <style>
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: #f5f5f7;
             margin: 0;
             padding: 0;
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f9;
             display: flex;
             justify-content: center;
             align-items: center;
@@ -17,208 +17,178 @@
         }
 
         .chat-container {
-            width: 600px;
-            max-width: 100%;
-            background: white;
+            width: 100%;
+            max-width: 800px;
+            height: 85vh;
+            background-color: #fff;
             border-radius: 15px;
-            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
-            overflow: hidden;
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
             display: flex;
             flex-direction: column;
-            padding: 20px;
         }
 
-        h1 {
+        .chat-header {
+            background-color: #0078d4;
+            padding: 20px;
+            color: white;
             text-align: center;
-            color: #4CAF50;
-            font-size: 26px;
-            margin-bottom: 20px;
+            font-size: 20px;
+            border-top-left-radius: 15px;
+            border-top-right-radius: 15px;
         }
 
         .chat-box {
             flex-grow: 1;
-            overflow-y: auto;
             padding: 20px;
-            background-color: #f9f9f9;
-            border-radius: 10px;
-            border: 1px solid #ddd;
-            font-size: 16px;
-            line-height: 1.6;
+            overflow-y: auto;
+            background-color: #fafafa;
+            border-bottom: 1px solid #ddd;
+            border-bottom-left-radius: 15px;
+            border-bottom-right-radius: 15px;
         }
 
         .message {
-            margin: 15px 0;
+            margin-bottom: 10px;
             padding: 12px;
-            border-radius: 12px;
+            border-radius: 10px;
             background-color: #e1f5fe;
             max-width: 75%;
             word-wrap: break-word;
-            position: relative;
         }
 
         .message.user {
-            background-color: #4CAF50;
-            color: white;
-            margin-left: auto;
+            background-color: #d3ffd3;
+            align-self: flex-end;
         }
 
         .message.bot {
             background-color: #fff;
-            color: #333;
-            margin-right: auto;
             border: 1px solid #ddd;
+            align-self: flex-start;
         }
 
         .input-container {
-            display: flex;
             padding: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
             background-color: #fff;
             border-top: 1px solid #ddd;
-            justify-content: space-between;
         }
 
         .input-container input {
-            width: 85%;
+            width: 80%;
             padding: 12px;
-            border: 2px solid #ddd;
             border-radius: 5px;
+            border: 1px solid #ddd;
             font-size: 16px;
-            transition: all 0.3s;
+            outline: none;
         }
 
         .input-container input:focus {
-            border-color: #4CAF50;
+            border-color: #0078d4;
         }
 
         .input-container button {
-            padding: 12px 18px;
-            background-color: #4CAF50;
-            color: white;
+            padding: 12px 20px;
+            background-color: #0078d4;
             border: none;
             border-radius: 5px;
+            color: white;
             cursor: pointer;
-            transition: all 0.3s;
+            font-size: 16px;
         }
 
         .input-container button:hover {
-            background-color: #45a049;
+            background-color: #005a9e;
         }
 
-        .input-container button:active {
-            background-color: #388e3c;
+        .input-container button:disabled {
+            background-color: #b0c4de;
+            cursor: not-allowed;
         }
-
-        .message .copy-btn, .message .regenerate-btn {
-            position: absolute;
-            top: 10px;
-            right: 10px;
-            background-color: #ff9800;
-            border: none;
-            padding: 6px 10px;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 12px;
-            color: white;
-            transition: background-color 0.3s;
-        }
-
-        .message .copy-btn:hover {
-            background-color: #ff5722;
-        }
-
-        .message .regenerate-btn {
-            right: 70px;
-            background-color: #00bcd4;
-        }
-
-        .message .regenerate-btn:hover {
-            background-color: #0097a7;
-        }
-
     </style>
 </head>
 <body>
+
     <div class="chat-container">
-        <h1>Чат с GPT-4o</h1>
+        <div class="chat-header">Чат с GPT-4o</div>
         <div class="chat-box" id="chat-box"></div>
         <div class="input-container">
-            <input type="text" id="user-input" placeholder="Напишите сообщение..." />
-            <button onclick="sendMessage()">Отправить</button>
+            <input type="text" id="user-input" placeholder="Введите сообщение..." />
+            <button id="send-button" onclick="sendMessage()" disabled>Отправить</button>
         </div>
     </div>
 
     <script>
         const chatBox = document.getElementById('chat-box');
         const userInput = document.getElementById('user-input');
-
-        // Проверяем наличие сохраненного чата в localStorage
+        const sendButton = document.getElementById('send-button');
         const chatHistory = JSON.parse(localStorage.getItem('chatHistory')) || [];
 
-        // Функция для добавления сообщений в чат
-        function addMessage(content, type, messageId) {
-            const messageElement = document.createElement('div');
-            messageElement.classList.add('message', type);
-            messageElement.innerHTML = `
-                ${content}
-                <button class="copy-btn" onclick="copyMessage(${messageId})">Копировать</button>
-                <button class="regenerate-btn" onclick="regenerateMessage(${messageId})">Перегенерировать</button>
-            `;
-            chatBox.appendChild(messageElement);
-            chatBox.scrollTop = chatBox.scrollHeight;  // Прокручиваем вниз, чтобы показать последнее сообщение
-        }
-
-        // Функция отправки сообщения
-        async function sendMessage() {
-            const message = userInput.value.trim();
-            if (message) {
-                addMessage(message, 'user', Date.now()); // Добавляем сообщение пользователя
-                userInput.value = '';
-
-                // Имитация отправки запроса на сервер GPT (здесь будет твой реальный API)
-                const response = await simulateGptResponse(message); // Подключи сюда функцию для реального API
-
-                // Добавляем ответ GPT в чат
-                addMessage(response, 'bot', Date.now()); // Добавляем ответ от GPT-4o
-
-                // Сохраняем чат в localStorage
-                chatHistory.push({ sender: 'user', content: message });
-                chatHistory.push({ sender: 'bot', content: response });
-                localStorage.setItem('chatHistory', JSON.stringify(chatHistory));
-            }
-        }
-
-        // Функция для копирования сообщения
-        function copyMessage(messageId) {
-            const message = document.querySelectorAll('.message')[messageId];
-            const textToCopy = message.innerText || message.textContent;
-            navigator.clipboard.writeText(textToCopy).then(() => {
-                alert("Сообщение скопировано!");
-            });
-        }
-
-        // Функция для перегенерации ответа
-        function regenerateMessage(messageId) {
-            const message = document.querySelectorAll('.message')[messageId];
-            message.innerHTML = "Загрузка...";
-            const userMessage = chatHistory[messageId - 1]; // Получаем сообщение пользователя
-            sendMessage(); // Перезапрашиваем GPT
-        }
-
-        // Имитация запроса к GPT (замени на настоящий API вызов)
-        async function simulateGptResponse(message) {
-            return new Promise(resolve => {
-                setTimeout(() => {
-                    resolve(`Ответ на: "${message}"`);
-                }, 1000);
-            });
-        }
-
-        // Загрузка сохраненного чата при загрузке страницы
+        // Загрузка сохраненного чата при старте
         window.onload = () => {
             chatHistory.forEach((chat, index) => {
                 addMessage(chat.content, chat.sender === 'user' ? 'user' : 'bot', index);
             });
         };
+
+        // Функция для добавления сообщения
+        function addMessage(content, type, messageId) {
+            const messageElement = document.createElement('div');
+            messageElement.classList.add('message', type);
+            messageElement.textContent = content;
+            chatBox.appendChild(messageElement);
+            chatBox.scrollTop = chatBox.scrollHeight;  // Прокрутка вниз
+        }
+
+        // Функция для отправки сообщения
+        async function sendMessage() {
+            const message = userInput.value.trim();
+            if (!message) return;
+
+            // Добавляем сообщение пользователя
+            addMessage(message, 'user', Date.now());
+            chatHistory.push({ sender: 'user', content: message });
+            localStorage.setItem('chatHistory', JSON.stringify(chatHistory));
+            userInput.value = '';
+
+            // Включаем кнопку отправки
+            sendButton.disabled = true;
+
+            // Получаем ответ от GPT-4o через сервер
+            try {
+                const response = await fetch('http://127.0.0.1:9001/ask', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ message })
+                });
+                const data = await response.json();
+
+                if (data.message) {
+                    // Добавляем ответ бота
+                    addMessage(data.message, 'bot', Date.now());
+                    chatHistory.push({ sender: 'bot', content: data.message });
+                    localStorage.setItem('chatHistory', JSON.stringify(chatHistory));
+                } else {
+                    addMessage('Ошибка: ' + data.error, 'bot', Date.now());
+                }
+            } catch (error) {
+                addMessage('Произошла ошибка: ' + error.message, 'bot', Date.now());
+            }
+
+            // Включаем кнопку обратно
+            sendButton.disabled = false;
+            chatBox.scrollTop = chatBox.scrollHeight;  // Прокрутка вниз
+        }
+
+        // Обработка события при вводе текста
+        userInput.addEventListener('input', () => {
+            sendButton.disabled = !userInput.value.trim();
+        });
     </script>
+
 </body>
 </html>
