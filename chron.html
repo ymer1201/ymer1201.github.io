@@ -114,7 +114,7 @@
             chatBox.scrollTop = chatBox.scrollHeight;
 
             try {
-                let response = await fetch("http://your-server-ip:100145/gpt4o", {  // Указываем новый порт
+                let response = await fetch("http://127.0.0.1:9653/gpt4o", {
                     method: "POST",
                     headers: {
                         "Content-Type": "application/json"
