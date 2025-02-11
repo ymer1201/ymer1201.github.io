@@ -3,368 +3,123 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Chat</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css">
+    <title>Чат GPT-4o</title>
     <style>
-        :root {
-            --primary: #10B981;
-            --background: #0F172A;
-            --surface: #1E293B;
-            --text-primary: #F8FAFC;
-            --text-secondary: #94A3B8;
-            --error: #EF4444;
-        }
-
         * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: 'Inter', system-ui, sans-serif;
+            margin: 0; padding: 0; box-sizing: border-box;
+            font-family: 'Arial', sans-serif;
         }
-
         body {
-            background: var(--background);
-            color: var(--text-primary);
+            background: #0d0d0d; color: white;
+            display: flex; flex-direction: column;
             height: 100vh;
-            display: flex;
+        }
+        .chat-header {
+            background: #007aff; padding: 15px;
+            text-align: center; font-size: 20px; font-weight: bold;
+            position: sticky; top: 0;
+        }
+        #chat-container {
+            flex: 1; overflow-y: auto;
+            padding: 15px; display: flex;
             flex-direction: column;
         }
-
-        .chat-container {
-            flex: 1;
-            padding: 1rem;
-            overflow-y: auto;
-            scroll-behavior: smooth;
-            display: flex;
-            flex-direction: column;
-            gap: 1.5rem;
-            max-width: 800px;
-            margin: 0 auto;
-            width: 100%;
-        }
-
         .message {
-            max-width: 85%;
-            padding: 1.5rem;
-            border-radius: 1.5rem;
-            animation: messageIn 0.3s ease;
-            position: relative;
-            line-height: 1.6;
-            word-break: break-word;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            padding: 12px 16px;
+            border-radius: 15px;
+            margin: 6px 0;
+            max-width: 75%;
+            word-wrap: break-word;
+            font-size: 16px;
         }
-
         .user-message {
-            background: var(--primary);
+            background: #007aff;
+            align-self: flex-end;
             color: white;
-            margin-left: auto;
-            border-bottom-right-radius: 0.5rem;
         }
-
         .bot-message {
-            background: var(--surface);
-            border: 1px solid rgba(255,255,255,0.1);
-            margin-right: auto;
-            border-bottom-left-radius: 0.5rem;
+            background: #333;
+            align-self: flex-start;
+            color: white;
         }
-
-        .message-actions {
-            position: absolute;
-            top: -12px;
-            right: 10px;
+        .loading {
+            color: #aaa;
+            font-style: italic;
+        }
+        #input-container {
             display: flex;
-            gap: 0.5rem;
-            opacity: 0;
-            transition: opacity 0.2s;
-        }
-
-        .message:hover .message-actions {
-            opacity: 1;
-        }
-
-        .action-btn {
-            width: 36px;
-            height: 36px;
-            border: none;
-            border-radius: 50%;
-            background: rgba(255,255,255,0.1);
-            backdrop-filter: blur(4px);
-            color: var(--text-primary);
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: 0.2s;
-        }
-
-        .action-btn:hover {
-            background: var(--primary);
-            transform: scale(1.1);
-        }
-
-        .input-container {
-            padding: 1.5rem;
-            background: var(--surface);
-            border-top: 1px solid rgba(255,255,255,0.1);
+            padding: 12px;
+            background: #1e1e1e;
+            border-top: 1px solid #444;
             position: sticky;
             bottom: 0;
-            display: flex;
-            gap: 1rem;
-            max-width: 800px;
-            margin: 0 auto;
-            width: 100%;
         }
-
-        #user-input {
-            flex: 1;
-            padding: 1rem 1.5rem;
-            border: none;
-            border-radius: 1.5rem;
-            background: rgba(255,255,255,0.05);
-            color: var(--text-primary);
-            font-size: 1rem;
-            outline: none;
-            transition: 0.2s;
+        input {
+            flex: 1; padding: 12px;
+            border: none; border-radius: 8px;
+            background: #333; color: white;
+            font-size: 16px;
         }
-
-        #user-input:focus {
-            box-shadow: 0 0 0 2px var(--primary);
-        }
-
-        #send-button {
-            padding: 1rem 1.5rem;
-            border: none;
-            border-radius: 1.5rem;
-            background: var(--primary);
-            color: white;
+        button {
+            background: #007aff; color: white;
+            border: none; padding: 12px;
+            margin-left: 10px; border-radius: 8px;
             cursor: pointer;
-            transition: 0.2s;
+            transition: background 0.3s;
         }
-
-        #send-button:hover {
-            opacity: 0.9;
-            transform: translateY(-1px);
+        button:hover {
+            background: #005bb5;
         }
-
-        .loading-indicator {
-            display: none;
-            position: fixed;
-            bottom: 80px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: var(--surface);
-            padding: 0.5rem 1rem;
-            border-radius: 2rem;
-            font-size: 0.9rem;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
-        }
-
-        pre {
-            position: relative;
-            background: rgba(0,0,0,0.2) !important;
-            padding: 1.5rem !important;
-            border-radius: 1rem !important;
-            margin: 1rem 0 !important;
-            overflow-x: auto;
-        }
-
-        .code-header {
-            position: absolute;
-            top: 0.5rem;
-            right: 0.5rem;
-            display: flex;
-            gap: 0.5rem;
-        }
-
-        .copy-code-btn {
-            background: var(--primary);
-            color: white;
-            border: none;
-            padding: 0.25rem 0.75rem;
-            border-radius: 0.5rem;
-            cursor: pointer;
-            font-size: 0.8rem;
-            transition: 0.2s;
-        }
-
-        .copy-code-btn:hover {
-            opacity: 0.9;
-        }
-
-        @keyframes messageIn {
-            from {
-                opacity: 0;
-                transform: translateY(20px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
+        .typing {
+            font-size: 14px; color: #bbb;
         }
     </style>
 </head>
 <body>
-    <div class="chat-container" id="chat">
-        <div class="message bot-message">
-            <div class="message-actions">
-                <button class="action-btn copy-btn">⎘</button>
-                <button class="action-btn regenerate-btn">↻</button>
-            </div>
-            🤖 Привет! Я ваш персональный AI-ассистент. Чем могу помочь?
-        </div>
+    <div class="chat-header">Чат GPT-4o</div>
+    <div id="chat-container"></div>
+    <div id="input-container">
+        <input type="text" id="messageInput" placeholder="Введите сообщение..." autofocus>
+        <button onclick="sendMessage()">➤</button>
     </div>
 
-    <div class="loading-indicator" id="loading">Генерация ответа...</div>
-
-    <div class="input-container">
-        <input type="text" id="user-input" placeholder="Напишите сообщение..." autocomplete="off">
-        <button id="send-button">Отправить</button>
-    </div>
-
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
     <script>
-        const chat = document.getElementById('chat');
-        const userInput = document.getElementById('user-input');
-        const sendButton = document.getElementById('send-button');
-        const loadingIndicator = document.getElementById('loading');
+        const chatContainer = document.getElementById("chat-container");
+        const messageInput = document.getElementById("messageInput");
 
-        function formatMessage(text) {
-            let formatted = text.replace(/```(\w+)?\n([\s\S]*?)```/g, (match, lang, code) => {
-                return `
-                    <div class="code-block">
-                        <div class="code-header">
-                            <button class="copy-code-btn">Копировать</button>
-                        </div>
-                        <pre><code class="language-${lang || ''}">${code.trim()}</code></pre>
-                    </div>
-                `;
+        function sendMessage() {
+            const message = messageInput.value.trim();
+            if (message === "") return;
+            addMessage(message, "user-message");
+
+            const loadingMessage = addMessage("Печатает...", "bot-message typing");
+
+            fetch("http://localhost:9007/chat", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ message })
+            })
+            .then(response => response.json())
+            .then(data => {
+                loadingMessage.remove();
+                addMessage(data.response || "Ошибка, попробуйте снова.", "bot-message");
+            })
+            .catch(() => {
+                loadingMessage.textContent = "Ошибка сети!";
             });
 
-            formatted = formatted.replace(/(https?:\/\/[^\s]+)/g, '<a href="$1" target="_blank">$1</a>');
-            return formatted;
+            messageInput.value = "";
+            messageInput.focus();
         }
 
-        function addMessage(text, isUser) {
-            const message = document.createElement('div');
-            message.className = `message ${isUser ? 'user-message' : 'bot-message'}`;
-            message.innerHTML = formatMessage(text);
-
-            if (!isUser) {
-                const actions = document.createElement('div');
-                actions.className = 'message-actions';
-                actions.innerHTML = `
-                    <button class="action-btn copy-btn">⎘</button>
-                    <button class="action-btn regenerate-btn">↻</button>
-                `;
-
-                actions.querySelector('.copy-btn').addEventListener('click', () => copyText(text));
-                actions.querySelector('.regenerate-btn').addEventListener('click', regenerateMessage);
-                
-                message.appendChild(actions);
-            }
-
-            chat.appendChild(message);
-            chat.scrollTo(0, chat.scrollHeight);
-            hljs.highlightAll();
-
-            message.querySelectorAll('.copy-code-btn').forEach(btn => {
-                btn.addEventListener('click', () => {
-                    const code = btn.parentElement.nextElementSibling.textContent;
-                    navigator.clipboard.writeText(code);
-                    btn.textContent = 'Скопировано!';
-                    setTimeout(() => btn.textContent = 'Копировать', 2000);
-                });
-            });
+        function addMessage(text, className) {
+            const messageDiv = document.createElement("div");
+            messageDiv.classList.add("message", className);
+            messageDiv.textContent = text;
+            chatContainer.appendChild(messageDiv);
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+            return messageDiv;
         }
-
-        function copyText(text) {
-            navigator.clipboard.writeText(text)
-                .then(() => showToast('Текст скопирован!'))
-                .catch(err => console.error('Ошибка копирования:', err));
-        }
-
-        async function regenerateMessage() {
-            const lastUserMessage = [...document.querySelectorAll('.user-message')].pop()?.textContent;
-            if (!lastUserMessage) return;
-
-            const lastBotMessage = [...document.querySelectorAll('.bot-message')].pop();
-            if (lastBotMessage) lastBotMessage.remove();
-
-            try {
-                loadingIndicator.style.display = 'block';
-                const response = await fetch('/chat', {
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({ message: lastUserMessage })
-                });
-
-                const data = await response.json();
-                if (data.status === 'success') {
-                    addMessage(data.content, false);
-                } else {
-                    showToast(data.error || 'Ошибка перегенерации');
-                }
-            } catch(e) {
-                showToast('Ошибка соединения');
-            } finally {
-                loadingIndicator.style.display = 'none';
-            }
-        }
-
-        async function sendMessage() {
-            const text = userInput.value.trim();
-            if (!text) return;
-
-            addMessage(text, true);
-            userInput.value = '';
-            sendButton.disabled = true;
-            loadingIndicator.style.display = 'block';
-
-            try {
-                const response = await fetch('/chat', {
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({ message: text })
-                });
-
-                const data = await response.json();
-                if (data.status === 'success') {
-                    addMessage(data.content, false);
-                } else {
-                    addMessage(`Ошибка: ${data.error}`, false);
-                }
-            } catch(e) {
-                addMessage('Ошибка соединения с сервером', false);
-            } finally {
-                sendButton.disabled = false;
-                loadingIndicator.style.display = 'none';
-            }
-        }
-
-        function showToast(message, duration=3000) {
-            const toast = document.createElement('div');
-            toast.textContent = message;
-            toast.style.position = 'fixed';
-            toast.style.bottom = '20px';
-            toast.style.left = '50%';
-            toast.style.transform = 'translateX(-50%)';
-            toast.style.background = 'var(--surface)';
-            toast.style.color = 'var(--text-primary)';
-            toast.style.padding = '0.75rem 1.5rem';
-            toast.style.borderRadius = '2rem';
-            toast.style.boxShadow = '0 4px 12px rgba(0,0,0,0.2)';
-            document.body.appendChild(toast);
-
-            setTimeout(() => toast.remove(), duration);
-        }
-
-        sendButton.addEventListener('click', sendMessage);
-        userInput.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter' && !e.shiftKey) {
-                e.preventDefault();
-                sendMessage();
-            }
-        });
     </script>
 </body>
 </html>
