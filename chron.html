@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Assistant Pro</title>
+    <title>AI Chat</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css">
     <style>
         :root {
@@ -292,7 +292,7 @@
 
             try {
                 loadingIndicator.style.display = 'block';
-                const response = await fetch('http://localhost:9007/chat', {
+                const response = await fetch('/chat', {
                     method: 'POST',
                     headers: {'Content-Type': 'application/json'},
                     body: JSON.stringify({ message: lastUserMessage })
@@ -321,7 +321,7 @@
             loadingIndicator.style.display = 'block';
 
             try {
-                const response = await fetch('http://localhost:9007/chat', {
+                const response = await fetch('/chat', {
                     method: 'POST',
                     headers: {'Content-Type': 'application/json'},
                     body: JSON.stringify({ message: text })
